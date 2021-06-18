@@ -50,19 +50,19 @@ public class Main {
 
   private final ProxyServer server;
   private final Path dataDirectory;
-  public final MySqlDatabase mySqlDatabase;
+  public MySqlDatabase mySqlDatabase;
 
   @Inject
-  public Main(ProxyServer server, @DataDirectory Path dataDirectory) throws SQLException {
+  public Main(ProxyServer server, @DataDirectory Path dataDirectory) {
     this.server = server;
     this.dataDirectory = dataDirectory;
-    this.mySqlDatabase = new MySqlDatabase(Settings.IMP.SQL.HOSTNAME, Settings.IMP.SQL.DATABASE, Settings.IMP.SQL.USER, Settings.IMP.SQL.PASSWORD);
   }
 
   @Subscribe
-  public void onProxyInitialization(ProxyInitializeEvent event) {
+  public void onProxyInitialization(ProxyInitializeEvent event) throws SQLException {
     Settings.IMP.reload(new File(dataDirectory.toFile(), "config.yml"));
 
+    mySqlDatabase = new MySqlDatabase(Settings.IMP.SQL.HOSTNAME, Settings.IMP.SQL.DATABASE, Settings.IMP.SQL.USER, Settings.IMP.SQL.PASSWORD);
     mySqlDatabase.makeTable("users", ImmutableMap.of("uuid", "VARCHAR(36)"));
 
     server.getCommandManager().register("hub", new HubCommand(server));
@@ -90,13 +90,13 @@ public class Main {
 
     if ("WDL|INIT".equalsIgnoreCase(e.getIdentifier().getId())
         || "wdl:init".equalsIgnoreCase(e.getIdentifier().getId())) {
-      p.disconnect(LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.WDL_KICK));
+      p.disconnect(LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.WDL_KICK.replace("{NL}", "\n")));
     }
 
     if (("PERMISSIONSREPL".equalsIgnoreCase(e.getIdentifier().getId())
         || "permissionrepl".equalsIgnoreCase(e.getIdentifier().getId()))
             && new String(e.getData()).contains("mod.worlddownloader")) {
-      p.disconnect(LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.WDL_KICK));
+      p.disconnect(LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.WDL_KICK.replace("{NL}", "\n")));
     }
   }
 }
