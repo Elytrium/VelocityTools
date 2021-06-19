@@ -21,21 +21,16 @@ jobs:
               with:
                   distribution: 'adopt'
                   java-version: ${{ matrix.java }}
-            - name: Cache gradle
+            - name: Cache maven
               uses: actions/cache@v2.1.6
               with:
-                path: |
-                  ~/.gradle
-                key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-                restore-keys: ${{ runner.os }}-gradle-
-            - name: Configure git
-              run: |
-                  git config --global user.email "no-reply@github.com"
-                  git config --global user.name "Github Actions"
+                path: ~/.m2/repository
+                key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+                restore-keys: ${{ runner.os }}-maven-
             - name: Patch and build
-              run: ./elytraproxy build
+              run: mvn clean package
             - name: Upload a build artifact
               uses: actions/upload-artifact@v2.2.4
               with:
-                name: ElytraProxy Built On ${{ matrix.java }} JDK
-                path: ElytraProxy-Build/proxy/build/libs/*-all.jar
+                name: ElytraProxy-Addon
+                path: targer/elytraproxy_addon-*.jar
