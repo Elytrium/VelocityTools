@@ -66,9 +66,9 @@ public class LinkCommand implements SimpleCommand {
       return;
     }
 
-    String checkIfUuid =
+    String uuidPattern =
         "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}";
-    if (!args[0].matches(checkIfUuid)) {
+    if (!args[0].matches(uuidPattern)) {
       source.sendMessage(LegacyComponentSerializer
           .legacyAmpersand()
           .deserialize(Settings.IMP.NOT_VALID));
