@@ -59,6 +59,11 @@ public class LinkCommand implements SimpleCommand {
     }
 
     Player player = (Player) source;
+    if (Settings.IMP.DISALLOWED_SERVERS
+        .contains(player.getCurrentServer().get().getServerInfo().getName())) {
+      return;
+    }
+
     if (args.length != 1) {
       source.sendMessage(LegacyComponentSerializer
           .legacyAmpersand()
@@ -114,16 +119,5 @@ public class LinkCommand implements SimpleCommand {
     } catch (IOException e) {
       e.printStackTrace();
     }
-  }
-
-  @Override
-  public boolean hasPermission(final SimpleCommand.Invocation invocation) {
-    final CommandSource source = invocation.source();
-    if (!(source instanceof Player)) {
-      return true;
-    }
-    Player player = (Player) source;
-    return !Settings.IMP.DISALLOWED_SERVERS
-        .contains(player.getCurrentServer().get().getServerInfo().getName());
   }
 }

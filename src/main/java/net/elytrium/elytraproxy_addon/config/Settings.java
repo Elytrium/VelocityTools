@@ -27,9 +27,6 @@ public class Settings extends Config {
   @Ignore
   public static final Settings IMP = new Settings();
 
-  @Create
-  public SQL SQL;
-
   public String WDL_KICK = "Не качай пжпжпжпжпж";
 
   public String MASTER_KEY = "вставь ключ, еблан";
@@ -43,6 +40,8 @@ public class Settings extends Config {
   public String NOT_COMPLETED = "Не удалось привязать ваш аккаунт.";
   public List<String> DISALLOWED_SERVERS = Arrays.asList("auth");
 
+  @Create
+  public SQL SQL;
 
   public static class SQL {
     public String HOSTNAME = "127.0.0.1:3306";
