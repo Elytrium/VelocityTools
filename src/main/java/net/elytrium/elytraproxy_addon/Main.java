@@ -34,6 +34,7 @@ import java.sql.SQLException;
 import net.elytrium.elytraproxy.database.MySqlDatabase;
 import net.elytrium.elytraproxy_addon.commands.HubCommand;
 import net.elytrium.elytraproxy_addon.commands.LinkCommand;
+import net.elytrium.elytraproxy_addon.commands.ReloadCommand;
 import net.elytrium.elytraproxy_addon.config.Settings;
 import java.nio.file.Path;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -49,7 +50,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 public class Main {
 
   private final ProxyServer server;
-  private final Path dataDirectory;
+  public final Path dataDirectory;
   public MySqlDatabase mySqlDatabase;
 
   @Inject
@@ -69,6 +70,8 @@ public class Main {
     server.getCommandManager().register("lobby", new HubCommand(server));
 
     server.getCommandManager().register("link", new LinkCommand(this));
+
+    server.getCommandManager().register("elytraproxy_addon_reload", new ReloadCommand(this));
 
     server.getChannelRegistrar().register(new LegacyChannelIdentifier("WDL|INIT")); // legacy
     server.getChannelRegistrar().register(MinecraftChannelIdentifier.create("wdl", "init"));
