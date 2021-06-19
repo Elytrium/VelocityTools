@@ -19,6 +19,7 @@ package net.elytrium.elytraproxy_addon;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.Subscribe;
@@ -50,7 +51,7 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 public class Main {
 
   private final ProxyServer server;
-  public final Path dataDirectory;
+  private final Path dataDirectory;
   public MySqlDatabase mySqlDatabase;
 
   @Inject
@@ -66,6 +67,13 @@ public class Main {
     mySqlDatabase = new MySqlDatabase(Settings.IMP.SQL.HOSTNAME, Settings.IMP.SQL.DATABASE, Settings.IMP.SQL.USER, Settings.IMP.SQL.PASSWORD);
     mySqlDatabase.makeTable("users", ImmutableMap.of("uuid", "VARCHAR(36)"));
 
+    server.getCommandManager().unregister("hub");
+    server.getCommandManager().unregister("lobby");
+
+    server.getCommandManager().unregister("link");
+
+    server.getCommandManager().unregister("elytraproxy_addon_reload");
+
     server.getCommandManager().register("hub", new HubCommand(server));
     server.getCommandManager().register("lobby", new HubCommand(server));
 
@@ -73,10 +81,29 @@ public class Main {
 
     server.getCommandManager().register("elytraproxy_addon_reload", new ReloadCommand(this));
 
+    server.getChannelRegistrar().unregister(new LegacyChannelIdentifier("WDL|INIT")); // legacy
+    server.getChannelRegistrar().unregister(MinecraftChannelIdentifier.create("wdl", "init"));
+    server.getChannelRegistrar().unregister(new LegacyChannelIdentifier("PERMISSIONREPL")); // legacy
+    server.getChannelRegistrar().unregister(MinecraftChannelIdentifier.create("permissionrepl", ""));
+
     server.getChannelRegistrar().register(new LegacyChannelIdentifier("WDL|INIT")); // legacy
     server.getChannelRegistrar().register(MinecraftChannelIdentifier.create("wdl", "init"));
     server.getChannelRegistrar().register(new LegacyChannelIdentifier("PERMISSIONREPL")); // legacy
     server.getChannelRegistrar().register(MinecraftChannelIdentifier.create("permissionrepl", ""));
+  }
+
+  public void reload(CommandSource source) {
+    try {
+      new Main(server, dataDirectory);
+      source.sendMessage(LegacyComponentSerializer
+          .legacyAmpersand()
+          .deserialize("Ну вроде норм."));
+    } catch (Exception e) {
+      source.sendMessage(LegacyComponentSerializer
+          .legacyAmpersand()
+          .deserialize("Пизда бляя"));
+      e.printStackTrace();
+    }
   }
 
   @Subscribe
