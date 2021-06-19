@@ -119,6 +119,9 @@ public class LinkCommand implements SimpleCommand {
   @Override
   public boolean hasPermission(final SimpleCommand.Invocation invocation) {
     final CommandSource source = invocation.source();
+    if (!(source instanceof Player)) {
+      return true;
+    }
     Player player = (Player) source;
     return !Settings.IMP.DISALLOWED_SERVERS
         .contains(player.getCurrentServer().get().getServerInfo().getName());
