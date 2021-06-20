@@ -29,6 +29,7 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.LegacyChannelIdentifier;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
+import com.velocitypowered.proxy.VelocityServer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +38,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import net.elytrium.elytraproxy.ElytraProxy;
 import net.elytrium.elytraproxy.database.MySqlDatabase;
 import net.elytrium.elytraproxy_addon.commands.HubCommand;
 import net.elytrium.elytraproxy_addon.commands.LinkCommand;
@@ -67,13 +67,14 @@ public class Main {
   private final Path dataDirectory;
   private long getTotalBlockedConnections;
   private long cachedBots;
-  private ElytraProxy getElytraProxy;
+  private final VelocityServer proxy;
   public MySqlDatabase mySqlDatabase;
 
   @Inject
-  public Main(ProxyServer server, @DataDirectory Path dataDirectory) {
+  public Main(ProxyServer server, VelocityServer proxy, @DataDirectory Path dataDirectory) {
     this.server = server;
     this.dataDirectory = dataDirectory;
+    this.proxy = proxy;
   }
 
   @Subscribe
@@ -101,7 +102,7 @@ public class Main {
     new Timer().scheduleAtFixedRate(new TimerTask() {
       @Override
       public void run() {
-        getTotalBlockedConnections = getElytraProxy.getStatistics().getBlockedConnections();
+        getTotalBlockedConnections = proxy.getElytraProxy().getStatistics().getBlockedConnections();
         try {
           if (!(getTotalBlockedConnections == 0) && cachedBots < getTotalBlockedConnections) {
             long diff = getTotalBlockedConnections - cachedBots;
