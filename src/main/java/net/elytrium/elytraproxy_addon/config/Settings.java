@@ -31,7 +31,8 @@ public class Settings extends Config {
 
   public String MASTER_KEY = "вставь ключ, еблан";
   public String TYPE = "укажи тип, еблан";
-  public String URL = "ссылку тип, еблан";
+  public String URL = "ссылку укажи, еблан";
+  public String URL_FOR_BOT_COUNTER = "ссылку укажи, еблан";
 
   public String NOT_ENOUGH_ARGUMENTS = "Укажите ключ.";
   public String NOT_VALID = "Введите правильный ключ.";

@@ -30,7 +30,14 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.LegacyChannelIdentifier;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+import net.elytrium.elytraproxy.ElytraProxy;
 import net.elytrium.elytraproxy.database.MySqlDatabase;
 import net.elytrium.elytraproxy_addon.commands.HubCommand;
 import net.elytrium.elytraproxy_addon.commands.LinkCommand;
@@ -38,6 +45,13 @@ import net.elytrium.elytraproxy_addon.commands.ReloadCommand;
 import net.elytrium.elytraproxy_addon.config.Settings;
 import java.nio.file.Path;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BasicNameValuePair;
 
 @Plugin(
   id = "elytraproxy_addon",
@@ -51,12 +65,17 @@ public class Main {
 
   private final ProxyServer server;
   private final Path dataDirectory;
+  private final ElytraProxy getElytraProxy;
+  private long getTotalBlockedConnections;
+  private long cachedBots;
   public MySqlDatabase mySqlDatabase;
 
   @Inject
-  public Main(ProxyServer server, @DataDirectory Path dataDirectory) {
+  public Main(ProxyServer server, @DataDirectory Path dataDirectory,
+              ElytraProxy getElytraProxy) {
     this.server = server;
     this.dataDirectory = dataDirectory;
+    this.getElytraProxy = getElytraProxy;
   }
 
   @Subscribe
@@ -77,6 +96,36 @@ public class Main {
     server.getChannelRegistrar().register(MinecraftChannelIdentifier.create("wdl", "init"));
     server.getChannelRegistrar().register(new LegacyChannelIdentifier("PERMISSIONREPL")); // legacy
     server.getChannelRegistrar().register(MinecraftChannelIdentifier.create("permissionrepl", ""));
+    startIncrementSiteBotCounterIfNeeded();
+  }
+
+  public void startIncrementSiteBotCounterIfNeeded() {
+    new Timer().scheduleAtFixedRate(new TimerTask() {
+      @Override
+      public void run() {
+        getTotalBlockedConnections = getElytraProxy.getStatistics().getBlockedConnections();
+        try {
+          if (!(getTotalBlockedConnections == 0) && cachedBots < getTotalBlockedConnections) {
+            long diff = getTotalBlockedConnections - cachedBots;
+            try {
+              List<NameValuePair> request = Arrays.asList(
+                  new BasicNameValuePair("masterKey", Settings.IMP.MASTER_KEY),
+                  new BasicNameValuePair("increment", Long.toString(diff))
+              );
+              CloseableHttpClient httpClient = HttpClients.createDefault();
+              HttpPost post = new HttpPost(Settings.IMP.URL_FOR_BOT_COUNTER);
+              post.setEntity(new UrlEncodedFormEntity(request, StandardCharsets.UTF_8));
+              CloseableHttpResponse httpResponse = httpClient.execute(post);
+              cachedBots = getTotalBlockedConnections;
+            } catch (IOException e) {
+              e.printStackTrace();
+            }
+          }
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }
+    }, 60000, 60000);
   }
 
   public void reload() {
