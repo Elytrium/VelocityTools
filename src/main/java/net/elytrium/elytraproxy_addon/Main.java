@@ -65,17 +65,15 @@ public class Main {
 
   private final ProxyServer server;
   private final Path dataDirectory;
-  private final ElytraProxy getElytraProxy;
   private long getTotalBlockedConnections;
   private long cachedBots;
+  private ElytraProxy getElytraProxy;
   public MySqlDatabase mySqlDatabase;
 
   @Inject
-  public Main(ProxyServer server, @DataDirectory Path dataDirectory,
-              ElytraProxy getElytraProxy) {
+  public Main(ProxyServer server, @DataDirectory Path dataDirectory) {
     this.server = server;
     this.dataDirectory = dataDirectory;
-    this.getElytraProxy = getElytraProxy;
   }
 
   @Subscribe
