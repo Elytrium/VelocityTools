@@ -29,7 +29,6 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.messages.LegacyChannelIdentifier;
 import com.velocitypowered.api.proxy.messages.MinecraftChannelIdentifier;
-import com.velocitypowered.proxy.VelocityServer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
