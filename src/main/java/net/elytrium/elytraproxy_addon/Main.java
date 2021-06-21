@@ -68,7 +68,6 @@ public class Main {
   private long getTotalBlockedConnections;
   private long cachedBots;
   public MySqlDatabase mySqlDatabase;
-  public Statistics stats;
 
   @Inject
   public Main(ProxyServer server, @DataDirectory Path dataDirectory) {
@@ -82,8 +81,6 @@ public class Main {
 
     mySqlDatabase = new MySqlDatabase(Settings.IMP.SQL.HOSTNAME, Settings.IMP.SQL.DATABASE, Settings.IMP.SQL.USER, Settings.IMP.SQL.PASSWORD);
     mySqlDatabase.makeTable("users", ImmutableMap.of("uuid", "VARCHAR(36)"));
-
-    stats = new Statistics();
 
     server.getCommandManager().register("hub", new HubCommand(server));
     server.getCommandManager().register("lobby", new HubCommand(server));
@@ -103,7 +100,7 @@ public class Main {
     new Timer().scheduleAtFixedRate(new TimerTask() {
       @Override
       public void run() {
-        getTotalBlockedConnections = stats.getBlockedConnections();
+        getTotalBlockedConnections = server.getBlockedConnections();
         try {
           if (!(getTotalBlockedConnections == 0) && cachedBots < getTotalBlockedConnections) {
             long diff = getTotalBlockedConnections - cachedBots;
