@@ -21,11 +21,13 @@ public class ReloadCommand implements SimpleCommand {
         plugin.reload();
         source.sendMessage(LegacyComponentSerializer
             .legacyAmpersand()
-            .deserialize("Вроде норм"));
+            .deserialize("Вроде норм")
+        );
       } catch (Exception e) {
         source.sendMessage(LegacyComponentSerializer
             .legacyAmpersand()
-            .deserialize("Пизда бляяя"));
+            .deserialize("Пизда бляяя")
+        );
         e.printStackTrace();
       }
     }

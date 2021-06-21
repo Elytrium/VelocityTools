@@ -127,7 +127,7 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
-           <plugin>
+            <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>templating-maven-plugin</artifactId>
                 <version>1.0.0</version>

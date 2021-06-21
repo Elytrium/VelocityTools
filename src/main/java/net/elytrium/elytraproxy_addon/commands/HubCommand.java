@@ -22,6 +22,9 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
+import com.velocitypowered.proxy.command.builtin.CommandMessages;
+import java.util.Optional;
+import net.elytrium.elytraproxy_addon.config.Settings;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class HubCommand implements SimpleCommand {
@@ -39,18 +42,20 @@ public class HubCommand implements SimpleCommand {
     if (!(source instanceof Player)) {
       source.sendMessage(LegacyComponentSerializer
           .legacyAmpersand()
-          .deserialize("Пошёл нахуй пидор консольный"));
+          .deserialize("Пошёл нахуй пидор консольный")
+      );
       return;
     }
 
     Player player = (Player) source;
-    RegisteredServer target = server.getServer("hub").orElse(null);
+    String serverName = Settings.IMP.HUB_SERVER;
+    Optional<RegisteredServer> toConnect = server.getServer(serverName);
 
-    if (target == null) {
+    if (!toConnect.isPresent()) {
+      player.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST(serverName));
       return;
     }
 
-    player.createConnectionRequest(target).fireAndForget();
+    player.createConnectionRequest(toConnect.get()).fireAndForget();
   }
-
 }
