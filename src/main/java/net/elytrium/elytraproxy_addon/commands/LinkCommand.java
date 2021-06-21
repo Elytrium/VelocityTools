@@ -59,6 +59,7 @@ public class LinkCommand implements SimpleCommand {
     }
 
     Player player = (Player) source;
+
     if (Settings.IMP.DISALLOWED_SERVERS
         .contains(player.getCurrentServer().get().getServerInfo().getName())) {
       return;
@@ -67,7 +68,8 @@ public class LinkCommand implements SimpleCommand {
     if (args.length != 1) {
       source.sendMessage(LegacyComponentSerializer
           .legacyAmpersand()
-          .deserialize(Settings.IMP.NOT_ENOUGH_ARGUMENTS));
+          .deserialize(Settings.IMP.NOT_ENOUGH_ARGUMENTS)
+      );
       return;
     }
 
@@ -76,7 +78,8 @@ public class LinkCommand implements SimpleCommand {
     if (!args[0].matches(uuidPattern)) {
       source.sendMessage(LegacyComponentSerializer
           .legacyAmpersand()
-          .deserialize(Settings.IMP.NOT_VALID));
+          .deserialize(Settings.IMP.NOT_VALID)
+      );
       return;
     }
 
@@ -84,7 +87,8 @@ public class LinkCommand implements SimpleCommand {
         ImmutableMap.of("uuid", player.getUniqueId()), LinkCommand.class) != null) {
       source.sendMessage(LegacyComponentSerializer
           .legacyAmpersand()
-          .deserialize(Settings.IMP.ALREADY_COMPLETED));
+          .deserialize(Settings.IMP.ALREADY_COMPLETED)
+      );
       return;
     }
 
@@ -108,13 +112,15 @@ public class LinkCommand implements SimpleCommand {
       if (completed) {
         source.sendMessage(LegacyComponentSerializer
             .legacyAmpersand()
-            .deserialize(Settings.IMP.COMPLETED));
+            .deserialize(Settings.IMP.COMPLETED)
+        );
         plugin.mySqlDatabase.insertMap("users",
             ImmutableMap.of("uuid", player.getUniqueId()), true);
       } else {
         source.sendMessage(LegacyComponentSerializer
             .legacyAmpersand()
-            .deserialize(Settings.IMP.NOT_COMPLETED));
+            .deserialize(Settings.IMP.NOT_COMPLETED)
+        );
       }
     } catch (IOException e) {
       e.printStackTrace();

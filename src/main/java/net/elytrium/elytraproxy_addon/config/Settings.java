@@ -28,6 +28,7 @@ public class Settings extends Config {
   public static final Settings IMP = new Settings();
 
   public String WDL_KICK = "Не качай пжпжпжпжпж";
+  public String HUB_SERVER = "hub";
 
   public String MASTER_KEY = "вставь ключ, еблан";
   public String TYPE = "укажи тип, еблан";

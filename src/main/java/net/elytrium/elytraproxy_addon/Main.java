@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import net.elytrium.elytraproxy.database.MySqlDatabase;
-import net.elytrium.elytraproxy.stats.Statistics;
 import net.elytrium.elytraproxy_addon.commands.HubCommand;
 import net.elytrium.elytraproxy_addon.commands.LinkCommand;
 import net.elytrium.elytraproxy_addon.commands.ReloadCommand;
@@ -79,20 +78,27 @@ public class Main {
   public void onProxyInitialization(ProxyInitializeEvent event) throws SQLException {
     reload();
 
-    mySqlDatabase = new MySqlDatabase(Settings.IMP.SQL.HOSTNAME, Settings.IMP.SQL.DATABASE, Settings.IMP.SQL.USER, Settings.IMP.SQL.PASSWORD);
+    mySqlDatabase = new MySqlDatabase(
+        Settings.IMP.SQL.HOSTNAME,
+        Settings.IMP.SQL.DATABASE,
+        Settings.IMP.SQL.USER,
+        Settings.IMP.SQL.PASSWORD
+    );
     mySqlDatabase.makeTable("users", ImmutableMap.of("uuid", "VARCHAR(36)"));
 
     server.getCommandManager().register("hub", new HubCommand(server));
     server.getCommandManager().register("lobby", new HubCommand(server));
-
     server.getCommandManager().register("link", new LinkCommand(this));
-
     server.getCommandManager().register("elytraproxy_addon_reload", new ReloadCommand(this));
 
-    server.getChannelRegistrar().register(new LegacyChannelIdentifier("WDL|INIT")); // legacy
-    server.getChannelRegistrar().register(MinecraftChannelIdentifier.create("wdl", "init"));
-    server.getChannelRegistrar().register(new LegacyChannelIdentifier("PERMISSIONREPL")); // legacy
-    server.getChannelRegistrar().register(MinecraftChannelIdentifier.create("permissionrepl", ""));
+    server.getChannelRegistrar().register(
+        new LegacyChannelIdentifier("WDL|INIT")); // legacy
+    server.getChannelRegistrar().register(
+        MinecraftChannelIdentifier.create("wdl", "init"));
+    server.getChannelRegistrar().register(
+        new LegacyChannelIdentifier("PERMISSIONREPL")); // legacy
+    server.getChannelRegistrar().register(
+        MinecraftChannelIdentifier.create("permissionrepl", ""));
     startIncrementSiteBotCounterIfNeeded();
   }
 
@@ -100,7 +106,7 @@ public class Main {
     new Timer().scheduleAtFixedRate(new TimerTask() {
       @Override
       public void run() {
-        getTotalBlockedConnections = server.getBlockedConnections();
+        getTotalBlockedConnections = server.getBlockedBots();
         try {
           if (!(getTotalBlockedConnections == 0) && cachedBots < getTotalBlockedConnections) {
             long diff = getTotalBlockedConnections - cachedBots;
@@ -135,10 +141,14 @@ public class Main {
 
   @Subscribe
   public void onProxyShutdown(ProxyShutdownEvent event) {
-    server.getChannelRegistrar().unregister(new LegacyChannelIdentifier("WDL|INIT")); // legacy
-    server.getChannelRegistrar().unregister(MinecraftChannelIdentifier.create("wdl", "init"));
-    server.getChannelRegistrar().unregister(new LegacyChannelIdentifier("PERMISSIONREPL")); // legacy
-    server.getChannelRegistrar().unregister(MinecraftChannelIdentifier.create("permissionrepl", ""));
+    server.getChannelRegistrar().unregister(
+        new LegacyChannelIdentifier("WDL|INIT")); // legacy
+    server.getChannelRegistrar().unregister(
+        MinecraftChannelIdentifier.create("wdl", "init"));
+    server.getChannelRegistrar().unregister(
+        new LegacyChannelIdentifier("PERMISSIONREPL")); // legacy
+    server.getChannelRegistrar().unregister(
+        MinecraftChannelIdentifier.create("permissionrepl", ""));
   }
 
   @Subscribe
@@ -147,13 +157,23 @@ public class Main {
 
     if ("WDL|INIT".equalsIgnoreCase(e.getIdentifier().getId())
         || "wdl:init".equalsIgnoreCase(e.getIdentifier().getId())) {
-      p.disconnect(LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.WDL_KICK.replace("{NL}", "\n")));
+      p.disconnect(
+          LegacyComponentSerializer
+              .legacyAmpersand()
+              .deserialize(Settings.IMP.WDL_KICK
+                  .replace("{NL}", "\n")
+              ));
     }
 
     if (("PERMISSIONSREPL".equalsIgnoreCase(e.getIdentifier().getId())
         || "permissionrepl".equalsIgnoreCase(e.getIdentifier().getId()))
             && new String(e.getData()).contains("mod.worlddownloader")) {
-      p.disconnect(LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.WDL_KICK.replace("{NL}", "\n")));
+      p.disconnect(
+          LegacyComponentSerializer
+              .legacyAmpersand()
+              .deserialize(Settings.IMP.WDL_KICK
+                  .replace("{NL}", "\n")
+              ));
     }
   }
 }
