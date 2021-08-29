@@ -15,23 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.elytrium.elytraproxy_addon.commands;
+package net.elytrium.velocitytools.commands;
 
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import com.velocitypowered.proxy.command.builtin.CommandMessages;
+import java.text.MessageFormat;
 import java.util.Optional;
-import net.elytrium.elytraproxy_addon.config.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class HubCommand implements SimpleCommand {
 
+  private final VelocityTools plugin;
   private final ProxyServer server;
 
-  public HubCommand(ProxyServer server) {
+  public HubCommand(VelocityTools plugin, ProxyServer server) {
+    this.plugin = plugin;
     this.server = server;
   }
 
@@ -40,22 +42,38 @@ public class HubCommand implements SimpleCommand {
     final CommandSource source = invocation.source();
 
     if (!(source instanceof Player)) {
-      source.sendMessage(LegacyComponentSerializer
-          .legacyAmpersand()
-          .deserialize("Пошёл нахуй пидор консольный")
-      );
+      source.sendMessage(
+          LegacyComponentSerializer
+              .legacyAmpersand()
+              .deserialize(this.plugin.getConfig().getString("commands.hub.players-only")));
       return;
     }
 
     Player player = (Player) source;
-    String serverName = Settings.IMP.HUB_SERVER;
-    Optional<RegisteredServer> toConnect = server.getServer(serverName);
+    String serverName = this.plugin.getConfig().getString("commands.hub.server");
+    Optional<RegisteredServer> toConnect = this.server.getServer(serverName);
 
     if (!toConnect.isPresent()) {
-      player.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST(serverName));
+      player.sendMessage(
+          LegacyComponentSerializer
+              .legacyAmpersand()
+              .deserialize(MessageFormat.format(
+                  this.plugin.getConfig().getString("commands.hub.not-enough-arguments"),
+                  serverName)
+              ));
       return;
     }
 
-    player.createConnectionRequest(toConnect.get()).fireAndForget();
+    player.getCurrentServer().ifPresent(serverConnection -> {
+      if (this.plugin.getConfig().getList("commands.hub.disabled-servers").stream().anyMatch(
+          serverConnection.getServer().getServerInfo().getName()::equals)) {
+        player.sendMessage(
+            LegacyComponentSerializer
+                .legacyAmpersand()
+                .deserialize(this.plugin.getConfig().getString("commands.hub.disabled-server-message")));
+      } else {
+        player.createConnectionRequest(toConnect.get()).fireAndForget();
+      }
+    });
   }
 }

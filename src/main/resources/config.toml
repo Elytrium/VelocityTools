@@ -1,0 +1,38 @@
+[commands]
+    [commands.alert]
+        # Need restart when changing
+        enabled = true
+        prefix = "&8[&4Alert&8] &r{0}"
+        message-needed = "&cYou must supply a message."
+        empty-proxy = "&cNo one is connected to this proxy!"
+    [commands.find]
+        # Need restart when changing
+        enabled = true
+        username-needed = "&cYou must supply a username."
+        player-online-at = "&6{0} &fis online at &6{1}"
+        player-not-online = "&6{0} &fis not online."
+    [commands.send]
+        # Need restart when changing
+        enabled = true
+        console = "CONSOLE"
+        server-does-not-exist = "&cThe specified server {0} does not exist."
+        not-enough-arguments = "&fNot enough arguments, usage: &6/send <server|player|all|current> <target>"
+        you-got-summoned = "&fSummoned to &6{0} &fby &6{1}"
+        players-only = "&fOnly players can run this command."
+        player-not-online = "&6{0} &fis not online."
+    [commands.hub]
+        # Need restart when changing
+        enabled = true
+        server = "hub"
+        # Need restart when changing
+        aliases = [
+            "lobby",
+            "hub"
+        ]
+        players-only = "&fOnly players can run this command."
+        server-does-not-exist = "&cThe specified server {0} does not exist."
+        disabled-servers = [
+            "foo",
+            "bar"
+        ]
+        disabled-server-message = "&cYou cannot use this command here."
