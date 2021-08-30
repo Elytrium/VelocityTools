@@ -35,16 +35,21 @@ import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
 import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
+import net.elytrium.velocitytools.hooks.PluginMessageHook;
+import net.elytrium.velocitytools.listeners.BrandChangerListener;
+import net.elytrium.velocitytools.listeners.ProtocolBlockerListener;
 import org.slf4j.Logger;
 
 @Plugin(
     id = "velocity_tools",
     name = "Velocity Tools",
-    version = "1.0.0",
+    version = BuildConstants.VERSION,
     url = "https://elytrium.net",
     authors = {"mdxd44", "hevav"}
 )
 public class VelocityTools {
+
+  private static VelocityTools instance;
 
   private final ProxyServer server;
   private final Path dataDirectory;
@@ -54,6 +59,7 @@ public class VelocityTools {
 
   @Inject
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger) {
+    VelocityTools.instance = this;
     this.logger = logger;
     this.server = server;
     this.dataDirectory = dataDirectory;
@@ -63,6 +69,7 @@ public class VelocityTools {
   public void onProxyInitialization(ProxyInitializeEvent event) {
     try {
       if (!this.dataDirectory.toFile().exists()) {
+        //noinspection ResultOfMethodCallIgnored
         this.dataDirectory.toFile().mkdir();
       }
 
@@ -79,6 +86,9 @@ public class VelocityTools {
 
     this.reload();
 
+    PluginMessageHook.init();
+
+    // Commands /////////////////////////
     if (this.config.getBoolean("commands.hub.enabled") && !this.config.getList("commands.hub.aliases").isEmpty()) {
       List<String> aliases = this.config.getList("commands.hub.aliases");
       this.server.getCommandManager().register(
@@ -101,6 +111,17 @@ public class VelocityTools {
     }
 
     this.server.getCommandManager().register("velocitytools", new VelocityToolsCommand(this), "vtools");
+    ///////////////////////////////////
+
+    // Tools /////////////////////////
+    if (this.config.getBoolean("tools.brandchanger.enabled")) {
+      this.server.getEventManager().register(this, new BrandChangerListener(this));
+    }
+
+    if (this.config.getBoolean("tools.protocolblocker.block_joining") || (this.config.getBoolean("tools.protocolblocker.block_ping") && (!this.config.getBoolean("tools.brandchanger.show-always") && !this.config.getBoolean("tools.brandchanger.enabled")))) {
+      this.server.getEventManager().register(this, new ProtocolBlockerListener(this));
+    }
+    ///////////////////////////////////
   }
 
   public void reload() {
@@ -113,5 +134,13 @@ public class VelocityTools {
 
   public Toml getConfig() {
     return this.config;
+  }
+
+  public static VelocityTools getInstance() {
+    return instance;
+  }
+
+  public ProxyServer getServer() {
+    return server;
   }
 }

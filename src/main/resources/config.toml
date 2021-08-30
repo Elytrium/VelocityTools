@@ -1,3 +1,20 @@
+#
+# Copyright (C) 2021 Elytrium
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 [commands]
     [commands.alert]
         # Need restart when changing
@@ -31,8 +48,34 @@
         ]
         players-only = "&fOnly players can run this command."
         server-does-not-exist = "&cThe specified server {0} does not exist."
+        # Set to "" to disable
+        you-got-moved = "&aYou have been moved to a hub!"
         disabled-servers = [
             "foo",
             "bar"
         ]
         disabled-server-message = "&cYou cannot use this command here."
+[tools]
+    [tools.protocolblocker]
+        # Need restart when changing
+        block_joining = true
+        # Need restart when changing, ignored when show-always in brandchanger enabled
+        block_ping = false
+        # If true, all all protocols except those on the list will be blocked
+        whitelist = false
+        # You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers
+        protocols = [
+            9999,
+            9998
+        ]
+        # For block_ping
+        brand = "Version not supported!"
+    [tools.brandchanger]
+        # Need restart when changing
+        enabled = true
+        ping_brand = "YourServer 1.12.2-1.17.1"
+        # For ping
+        show-always = false
+        # {0} - Original server brand (e.g. Paper)
+        ingame_brand = "YourServer ({0})"
+    [tools.hostnamesmanager]

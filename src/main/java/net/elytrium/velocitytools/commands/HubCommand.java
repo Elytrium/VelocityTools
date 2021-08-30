@@ -53,7 +53,7 @@ public class HubCommand implements SimpleCommand {
     String serverName = this.plugin.getConfig().getString("commands.hub.server");
     Optional<RegisteredServer> toConnect = this.server.getServer(serverName);
 
-    if (!toConnect.isPresent()) {
+    if (toConnect.isEmpty()) {
       player.sendMessage(
           LegacyComponentSerializer
               .legacyAmpersand()
@@ -72,7 +72,15 @@ public class HubCommand implements SimpleCommand {
                 .legacyAmpersand()
                 .deserialize(this.plugin.getConfig().getString("commands.hub.disabled-server-message")));
       } else {
-        player.createConnectionRequest(toConnect.get()).fireAndForget();
+        player.createConnectionRequest(toConnect.get()).connectWithIndication()
+            .thenAccept(isSuccessful -> {
+              if (isSuccessful && !this.plugin.getConfig().getString("commands.hub.you-got-moved").isEmpty()) {
+                player.sendMessage(
+                    LegacyComponentSerializer
+                        .legacyAmpersand()
+                        .deserialize(this.plugin.getConfig().getString("commands.hub.you-got-moved")));
+              }
+        });
       }
     });
   }
