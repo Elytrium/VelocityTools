@@ -37,7 +37,8 @@ import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
 import net.elytrium.velocitytools.hooks.PluginMessageHook;
 import net.elytrium.velocitytools.listeners.BrandChangerListener;
-import net.elytrium.velocitytools.listeners.ProtocolBlockerListener;
+import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
+import net.elytrium.velocitytools.listeners.ProtocolBlockerPingListener;
 import org.slf4j.Logger;
 
 @Plugin(
@@ -59,7 +60,7 @@ public class VelocityTools {
 
   @Inject
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger) {
-    VelocityTools.instance = this;
+    instance = this;
     this.logger = logger;
     this.server = server;
     this.dataDirectory = dataDirectory;
@@ -67,6 +68,16 @@ public class VelocityTools {
 
   @Subscribe
   public void onProxyInitialization(ProxyInitializeEvent event) {
+    this.reload();
+
+    PluginMessageHook.init();
+  }
+
+  public static VelocityTools getInstance() {
+    return instance;
+  }
+
+  public void reload() {
     try {
       if (!this.dataDirectory.toFile().exists()) {
         //noinspection ResultOfMethodCallIgnored
@@ -80,17 +91,16 @@ public class VelocityTools {
             configFile.toPath()
         );
       }
+      this.config = new Toml().read(new File(this.dataDirectory.toFile(), "config.toml"));
     } catch (IOException e) {
-      this.logger.error("Unable to load configuration!", e);
+      e.printStackTrace();
     }
 
-    this.reload();
-
-    PluginMessageHook.init();
-
     // Commands /////////////////////////
+
     if (this.config.getBoolean("commands.hub.enabled") && !this.config.getList("commands.hub.aliases").isEmpty()) {
       List<String> aliases = this.config.getList("commands.hub.aliases");
+      this.server.getCommandManager().unregister(aliases.get(0));
       this.server.getCommandManager().register(
           aliases.get(0),
           new HubCommand(this, this.server),
@@ -99,45 +109,43 @@ public class VelocityTools {
     }
 
     if (this.config.getBoolean("commands.alert.enabled")) {
+      this.server.getCommandManager().unregister("alert");
       this.server.getCommandManager().register("alert", new AlertCommand(this, this.server));
     }
 
     if (this.config.getBoolean("commands.find.enabled")) {
+      this.server.getCommandManager().unregister("find");
       this.server.getCommandManager().register("find", new FindCommand(this, this.server));
     }
 
     if (this.config.getBoolean("commands.send.enabled")) {
+      this.server.getCommandManager().unregister("send");
       this.server.getCommandManager().register("send", new SendCommand(this, this.server));
     }
 
+    this.server.getCommandManager().unregister("velocitytools");
     this.server.getCommandManager().register("velocitytools", new VelocityToolsCommand(this), "vtools");
     ///////////////////////////////////
 
     // Tools /////////////////////////
+    this.server.getEventManager().unregisterListeners(this);
+
     if (this.config.getBoolean("tools.brandchanger.enabled")) {
       this.server.getEventManager().register(this, new BrandChangerListener(this));
     }
 
-    if (this.config.getBoolean("tools.protocolblocker.block_joining") || (this.config.getBoolean("tools.protocolblocker.block_ping") && (!this.config.getBoolean("tools.brandchanger.show-always") && !this.config.getBoolean("tools.brandchanger.enabled")))) {
-      this.server.getEventManager().register(this, new ProtocolBlockerListener(this));
+    if (this.config.getBoolean("tools.protocolblocker.block_ping")) {
+      this.server.getEventManager().register(this, new ProtocolBlockerPingListener(this));
+    }
+
+    if (this.config.getBoolean("tools.protocolblocker.block_joining")) {
+      this.server.getEventManager().register(this, new ProtocolBlockerJoinListener(this));
     }
     ///////////////////////////////////
   }
 
-  public void reload() {
-    try {
-      this.config = new Toml().read(new File(this.dataDirectory.toFile(), "config.toml"));
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-
   public Toml getConfig() {
     return this.config;
-  }
-
-  public static VelocityTools getInstance() {
-    return instance;
   }
 
   public ProxyServer getServer() {

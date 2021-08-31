@@ -16,38 +16,51 @@
 #
 
 [commands]
+    #
+    # Permissions:
+    #   │
+    #   ├── Commands:
+    #   │   │
+    #   │   ├── /alert
+    #   │   │   └── velocitytools.command.alert
+    #   │   ├── /find
+    #   │   │   └── velocitytools.command.find
+    #   │   ├── /send
+    #   │   │   └── velocitytools.command.send
+    #   │   └── /hub
+    #   │       ├── velocitytools.command.hub
+    #   │       └── velocitytools.command.hub.bypass.<servername> (disabled-servers bypass permission)
+    #   └── Tools bypass:
+    #       │
+    #       ├── ProtocolBlocker
+    #       │   └── protocolblocker.join_block.bypass
+    #       └── HostnamesManager
+    #           └── hostnamesmanager.
+    #
+
     [commands.alert]
-        # Need restart when changing
         enabled = true
         prefix = "&8[&4Alert&8] &r{0}"
         message-needed = "&cYou must supply a message."
         empty-proxy = "&cNo one is connected to this proxy!"
     [commands.find]
-        # Need restart when changing
         enabled = true
         username-needed = "&cYou must supply a username."
         player-online-at = "&6{0} &fis online at &6{1}"
         player-not-online = "&6{0} &fis not online."
     [commands.send]
-        # Need restart when changing
         enabled = true
         console = "CONSOLE"
-        server-does-not-exist = "&cThe specified server {0} does not exist."
         not-enough-arguments = "&fNot enough arguments, usage: &6/send <server|player|all|current> <target>"
         you-got-summoned = "&fSummoned to &6{0} &fby &6{1}"
-        players-only = "&fOnly players can run this command."
         player-not-online = "&6{0} &fis not online."
     [commands.hub]
-        # Need restart when changing
         enabled = true
         server = "hub"
-        # Need restart when changing
         aliases = [
             "lobby",
             "hub"
         ]
-        players-only = "&fOnly players can run this command."
-        server-does-not-exist = "&cThe specified server {0} does not exist."
         # Set to "" to disable
         you-got-moved = "&aYou have been moved to a hub!"
         disabled-servers = [
@@ -55,13 +68,12 @@
             "bar"
         ]
         disabled-server-message = "&cYou cannot use this command here."
+
 [tools]
     [tools.protocolblocker]
-        # Need restart when changing
         block_joining = true
-        # Need restart when changing, ignored when show-always in brandchanger enabled
         block_ping = false
-        # If true, all all protocols except those on the list will be blocked
+        # If true, all protocols except those on the list will be blocked
         whitelist = false
         # You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers
         protocols = [
@@ -70,8 +82,11 @@
         ]
         # For block_ping
         brand = "Version not supported!"
+        # For block_ping, set to "" to disable
+        motd = "&cVersion not supported!\n&eUse 1.12.2 or later"
+        # For block_joining
+        kick_reason = "&cYour version is unsupported!"
     [tools.brandchanger]
-        # Need restart when changing
         enabled = true
         ping_brand = "YourServer 1.12.2-1.17.1"
         # For ping
