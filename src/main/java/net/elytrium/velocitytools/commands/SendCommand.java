@@ -24,12 +24,14 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
+import com.velocitypowered.proxy.command.builtin.CommandMessages;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class SendCommand implements SimpleCommand {
@@ -90,24 +92,21 @@ public class SendCommand implements SimpleCommand {
       source.sendMessage(
           LegacyComponentSerializer
               .legacyAmpersand()
-              .deserialize(this.plugin.getConfig().getString("not-enough-arguments")));
+              .deserialize(this.plugin.getConfig().getString("commands.send.not-enough-arguments")));
       return;
     }
 
     RegisteredServer target = this.server.getServer(args[1]).orElse(null);
+
     if (target == null) {
-      source.sendMessage(
-          LegacyComponentSerializer
-              .legacyAmpersand()
-              .deserialize(MessageFormat.format(
-                  this.plugin.getConfig().getString("commands.send.server-does-not-exist"), args[1])));
+      source.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(args[1])));
       return;
     }
 
     Component summoned = LegacyComponentSerializer
         .legacyAmpersand()
         .deserialize(MessageFormat.format(
-            this.plugin.getConfig().getString("commands.send.server-does-not-exist"),
+            this.plugin.getConfig().getString("commands.send.you-got-summoned"),
             target.getServerInfo().getName(),
             ((source instanceof Player)
                 ? ((Player) source).getUsername()
@@ -115,26 +114,29 @@ public class SendCommand implements SimpleCommand {
 
     switch (args[0].toLowerCase()) {
       case "all": {
-        this.server.getAllPlayers().forEach(p -> p.createConnectionRequest(target).fireAndForget());
-        for (Player player : this.server.getAllPlayers()) {
-          player.sendMessage(player, summoned);
-        }
+        this.server.getAllPlayers().forEach(p -> p.createConnectionRequest(target).connectWithIndication()
+            .thenAccept(isSuccessful -> {
+              if (isSuccessful) {
+                p.sendMessage(summoned);
+              }
+            }));
         break;
       }
       case "current": {
         if (!(source instanceof Player)) {
-          source.sendMessage(
-              LegacyComponentSerializer
-                  .legacyAmpersand()
-                  .deserialize(this.plugin.getConfig().getString("commands.send.players-only")));
+          source.sendMessage(CommandMessages.PLAYERS_ONLY);
           break;
         }
         Player player = (Player) source;
         player.getCurrentServer().ifPresent(serverConnection -> {
           Collection<Player> players = serverConnection.getServer().getPlayersConnected();
           for (Player p : players) {
-            p.createConnectionRequest(target).fireAndForget();
-            p.sendMessage(summoned);
+            p.createConnectionRequest(target).connectWithIndication()
+                .thenAccept(isSuccessful -> {
+                  if (isSuccessful) {
+                    p.sendMessage(summoned);
+                  }
+                });
           }
         });
         break;
@@ -142,8 +144,12 @@ public class SendCommand implements SimpleCommand {
       default: {
         Player player = this.server.getPlayer(args[0]).orElse(null);
         if (player != null) {
-          player.createConnectionRequest(target).fireAndForget();
-          player.sendMessage(summoned);
+          player.createConnectionRequest(target).connectWithIndication()
+              .thenAccept(isSuccessful -> {
+                if (isSuccessful) {
+                  player.sendMessage(summoned);
+                }
+              });
         } else {
           source.sendMessage(
               LegacyComponentSerializer
@@ -161,6 +167,6 @@ public class SendCommand implements SimpleCommand {
 
   @Override
   public boolean hasPermission(final SimpleCommand.Invocation invocation) {
-    return invocation.source().hasPermission("elytraproxy.command.send");
+    return invocation.source().hasPermission("velocitytools.command.send");
   }
 }

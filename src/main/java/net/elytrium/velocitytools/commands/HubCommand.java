@@ -22,19 +22,29 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-import java.text.MessageFormat;
-import java.util.Optional;
+import com.velocitypowered.proxy.command.builtin.CommandMessages;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class HubCommand implements SimpleCommand {
 
   private final VelocityTools plugin;
   private final ProxyServer server;
+  private final List<String> disabledServers;
 
   public HubCommand(VelocityTools plugin, ProxyServer server) {
     this.plugin = plugin;
     this.server = server;
+
+    this.disabledServers = this.plugin.getConfig().getList("commands.hub.disabled-servers")
+        .stream()
+        .map(object -> Objects.toString(object, null))
+        .collect(Collectors.toList());
   }
 
   @Override
@@ -42,37 +52,31 @@ public class HubCommand implements SimpleCommand {
     final CommandSource source = invocation.source();
 
     if (!(source instanceof Player)) {
-      source.sendMessage(
-          LegacyComponentSerializer
-              .legacyAmpersand()
-              .deserialize(this.plugin.getConfig().getString("commands.hub.players-only")));
+      source.sendMessage(CommandMessages.PLAYERS_ONLY);
       return;
     }
 
     Player player = (Player) source;
     String serverName = this.plugin.getConfig().getString("commands.hub.server");
-    Optional<RegisteredServer> toConnect = this.server.getServer(serverName);
 
-    if (toConnect.isEmpty()) {
-      player.sendMessage(
-          LegacyComponentSerializer
-              .legacyAmpersand()
-              .deserialize(MessageFormat.format(
-                  this.plugin.getConfig().getString("commands.hub.not-enough-arguments"),
-                  serverName)
-              ));
+    RegisteredServer toConnect = this.server.getServer(serverName).orElse(null);
+
+    if (toConnect == null) {
+      source.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(serverName)));
       return;
     }
 
     player.getCurrentServer().ifPresent(serverConnection -> {
-      if (this.plugin.getConfig().getList("commands.hub.disabled-servers").stream().anyMatch(
-          serverConnection.getServer().getServerInfo().getName()::equals)) {
+      String servername = serverConnection.getServer().getServerInfo().getName();
+
+      if (this.disabledServers.stream().anyMatch(servername::equals)
+          && !player.hasPermission("velocitytools.command.hub.bypass." + servername)) {
         player.sendMessage(
             LegacyComponentSerializer
                 .legacyAmpersand()
                 .deserialize(this.plugin.getConfig().getString("commands.hub.disabled-server-message")));
       } else {
-        player.createConnectionRequest(toConnect.get()).connectWithIndication()
+        player.createConnectionRequest(toConnect).connectWithIndication()
             .thenAccept(isSuccessful -> {
               if (isSuccessful && !this.plugin.getConfig().getString("commands.hub.you-got-moved").isEmpty()) {
                 player.sendMessage(
@@ -83,5 +87,10 @@ public class HubCommand implements SimpleCommand {
         });
       }
     });
+  }
+
+  @Override
+  public boolean hasPermission(final SimpleCommand.Invocation invocation) {
+    return invocation.source().hasPermission("velocitytools.command.hub");
   }
 }
