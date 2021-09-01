@@ -32,10 +32,8 @@
     #   │       └── velocitytools.command.hub.bypass.<servername> (disabled-servers bypass permission)
     #   └── Tools bypass:
     #       │
-    #       ├── ProtocolBlocker
-    #       │   └── protocolblocker.join_block.bypass
     #       └── HostnamesManager
-    #           └── hostnamesmanager.
+    #           └── velocitytools.tools.hostnamesmanager.bypass.<ip>
     #
 
     [commands.alert]
@@ -54,20 +52,21 @@
         not-enough-arguments = "&fNot enough arguments, usage: &6/send <server|player|all|current> <target>"
         you-got-summoned = "&fSummoned to &6{0} &fby &6{1}"
         player-not-online = "&6{0} &fis not online."
+        callback = "&aAttempting to send {0} players to {1}"
     [commands.hub]
         enabled = true
         server = "hub"
-        aliases = [
-            "lobby",
-            "hub"
-        ]
         # Set to "" to disable
         you-got-moved = "&aYou have been moved to a hub!"
+        disabled-server-message = "&cYou cannot use this command here."
         disabled-servers = [
             "foo",
             "bar"
         ]
-        disabled-server-message = "&cYou cannot use this command here."
+        aliases = [
+            "lobby",
+            "hub"
+        ]
 
 [tools]
     [tools.protocolblocker]
@@ -94,3 +93,5 @@
         # {0} - Original server brand (e.g. Paper)
         ingame_brand = "YourServer ({0})"
     [tools.hostnamesmanager]
+        block_joining = true
+        block_ping = false

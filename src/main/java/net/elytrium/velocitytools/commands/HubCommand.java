@@ -28,7 +28,6 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class HubCommand implements SimpleCommand {
@@ -84,7 +83,7 @@ public class HubCommand implements SimpleCommand {
                         .legacyAmpersand()
                         .deserialize(this.plugin.getConfig().getString("commands.hub.you-got-moved")));
               }
-        });
+            });
       }
     });
   }
