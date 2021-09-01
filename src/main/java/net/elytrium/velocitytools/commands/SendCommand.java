@@ -26,12 +26,11 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import com.velocitypowered.proxy.command.builtin.CommandMessages;
 import java.text.MessageFormat;
-import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class SendCommand implements SimpleCommand {
@@ -112,14 +111,18 @@ public class SendCommand implements SimpleCommand {
                 ? ((Player) source).getUsername()
                 : this.plugin.getConfig().getString("commands.send.console"))));
 
+    AtomicInteger sentPlayers = new AtomicInteger();
+
     switch (args[0].toLowerCase()) {
       case "all": {
-        this.server.getAllPlayers().forEach(p -> p.createConnectionRequest(target).connectWithIndication()
-            .thenAccept(isSuccessful -> {
-              if (isSuccessful) {
-                p.sendMessage(summoned);
-              }
-            }));
+        this.server.getAllPlayers().forEach(p ->
+            p.createConnectionRequest(target).connectWithIndication()
+                .thenAccept(isSuccessful -> {
+                  sentPlayers.getAndIncrement();
+                  if (isSuccessful) {
+                    p.sendMessage(summoned);
+                  }
+                }));
         break;
       }
       case "current": {
@@ -127,42 +130,63 @@ public class SendCommand implements SimpleCommand {
           source.sendMessage(CommandMessages.PLAYERS_ONLY);
           break;
         }
-        Player player = (Player) source;
-        player.getCurrentServer().ifPresent(serverConnection -> {
-          Collection<Player> players = serverConnection.getServer().getPlayersConnected();
-          for (Player p : players) {
-            p.createConnectionRequest(target).connectWithIndication()
-                .thenAccept(isSuccessful -> {
-                  if (isSuccessful) {
-                    p.sendMessage(summoned);
-                  }
-                });
-          }
-        });
+        ((Player) source).getCurrentServer().ifPresent(serverConnection ->
+            serverConnection.getServer().getPlayersConnected().forEach(p ->
+                p.createConnectionRequest(target).connectWithIndication()
+                    .thenAccept(isSuccessful -> {
+                      sentPlayers.getAndIncrement();
+                      if (isSuccessful) {
+                        p.sendMessage(summoned);
+                      }
+                    })));
         break;
       }
       default: {
-        Player player = this.server.getPlayer(args[0]).orElse(null);
-        if (player != null) {
-          player.createConnectionRequest(target).connectWithIndication()
-              .thenAccept(isSuccessful -> {
-                if (isSuccessful) {
-                  player.sendMessage(summoned);
-                }
-              });
+        RegisteredServer serverTarget = this.server.getServer(args[0]).orElse(null);
+
+        if (serverTarget != null) {
+          serverTarget.getPlayersConnected().forEach(p ->
+              p.createConnectionRequest(target).connectWithIndication()
+                  .thenAccept(isSuccessful -> {
+                    sentPlayers.getAndIncrement();
+                    if (isSuccessful) {
+                      p.sendMessage(summoned);
+                    }
+                  }));
         } else {
-          source.sendMessage(
-              LegacyComponentSerializer
-                  .legacyAmpersand()
-                  .deserialize(
-                      MessageFormat.format(
-                          this.plugin.getConfig().getString("commands.send.player-not-online"),
-                          args[0])
-                  ));
+          Player player = this.server.getPlayer(args[0]).orElse(null);
+          if (player != null) {
+            player.createConnectionRequest(target).connectWithIndication()
+                .thenAccept(isSuccessful -> {
+                  sentPlayers.getAndIncrement();
+                  if (isSuccessful) {
+                    player.sendMessage(summoned);
+                  }
+                });
+          } else {
+            source.sendMessage(
+                LegacyComponentSerializer
+                    .legacyAmpersand()
+                    .deserialize(
+                        MessageFormat.format(
+                            this.plugin.getConfig().getString("commands.send.player-not-online"),
+                            args[0])
+                    ));
+          }
         }
         break;
       }
     }
+
+    source.sendMessage(
+        LegacyComponentSerializer
+            .legacyAmpersand()
+            .deserialize(
+                MessageFormat.format(
+                    this.plugin.getConfig().getString("commands.send.callback"),
+                    sentPlayers.get(),
+                    target.getServerInfo().getName())
+            ));
   }
 
   @Override

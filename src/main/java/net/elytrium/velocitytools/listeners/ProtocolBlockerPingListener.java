@@ -38,13 +38,13 @@ public class ProtocolBlockerPingListener {
 
   public ProtocolBlockerPingListener(VelocityTools plugin) {
     this.protocols = plugin.getConfig().getList("tools.protocolblocker.protocols")
-       .stream()
-       .map(object -> Integer.parseInt(Objects.toString(object, null)))
-       .collect(Collectors.toList());
-   this.whitelist = plugin.getConfig().getBoolean("tools.protocolblocker.whitelist");
-   this.motd = plugin.getConfig().getString("tools.protocolblocker.motd");
-   this.motdComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.motd);
-   this.brand = plugin.getConfig().getString("tools.protocolblocker.brand");
+        .stream()
+        .map(object -> Integer.parseInt(Objects.toString(object, null)))
+        .collect(Collectors.toList());
+    this.whitelist = plugin.getConfig().getBoolean("tools.protocolblocker.whitelist");
+    this.motd = plugin.getConfig().getString("tools.protocolblocker.motd");
+    this.motdComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.motd);
+    this.brand = plugin.getConfig().getString("tools.protocolblocker.brand");
   }
 
   @Subscribe(order = PostOrder.LAST)

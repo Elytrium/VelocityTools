@@ -86,18 +86,16 @@ public class VelocityTools {
 
       File configFile = new File(this.dataDirectory.toFile(), "config.toml");
       if (!configFile.exists()) {
-        Files.copy(Objects.requireNonNull(
-            VelocityTools.class.getResourceAsStream("/config.toml")),
+        Files.copy(Objects.requireNonNull(VelocityTools.class.getResourceAsStream("/config.toml")),
             configFile.toPath()
         );
       }
       this.config = new Toml().read(new File(this.dataDirectory.toFile(), "config.toml"));
     } catch (IOException e) {
-      e.printStackTrace();
+      this.logger.error("Unable to load configuration!", e);
     }
 
     // Commands /////////////////////////
-
     if (this.config.getBoolean("commands.hub.enabled") && !this.config.getList("commands.hub.aliases").isEmpty()) {
       List<String> aliases = this.config.getList("commands.hub.aliases");
       this.server.getCommandManager().unregister(aliases.get(0));
