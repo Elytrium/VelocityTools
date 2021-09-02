@@ -26,7 +26,7 @@ jobs:
                 key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
                 restore-keys: ${{ runner.os }}-gradle-
             - name: Download Velocity
-              run: mkdir libs && wget https://ci.velocitypowered.com/job/velocity-3.0.0/lastSuccessfulBuild/artifact/proxy/build/libs/velocity-proxy-3.0.1-SNAPSHOT-all.jar -O "libs/3.0.0.jar"
+              run: mkdir libs && wget https://ci.velocitypowered.com/job/velocity-3.0.0/lastSuccessfulBuild/artifact/proxy/build/libs/velocity-proxy-3.0.2-SNAPSHOT-all.jar -O "libs/3.0.0.jar"
             - name: Build
               run: ./gradlew build
             - name: Upload a build artifact
