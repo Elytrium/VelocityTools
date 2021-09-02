@@ -42,7 +42,7 @@ public class HostnamesManagerListener {
         .stream()
         .map(object -> Objects.toString(object, null))
         .collect(Collectors.toList());
-    this.whitelistedIps = plugin.getConfig().getList("tools.hostnamesmanager.hostnames")
+    this.whitelistedIps = plugin.getConfig().getList("tools.hostnamesmanager.ignored-ips")
         .stream()
         .map(object -> Objects.toString(object, null))
         .collect(Collectors.toList());
