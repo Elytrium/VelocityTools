@@ -37,7 +37,7 @@ import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
 import net.elytrium.velocitytools.hooks.PluginMessageHook;
 import net.elytrium.velocitytools.listeners.BrandChangerListener;
-import net.elytrium.velocitytools.listeners.HostnamesManagerJoinListener;
+import net.elytrium.velocitytools.listeners.HostnamesManagerListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerPingListener;
 import org.slf4j.Logger;
@@ -141,7 +141,9 @@ public class VelocityTools {
       this.server.getEventManager().register(this, new ProtocolBlockerJoinListener(this));
     }
 
-    this.server.getEventManager().register(this, new HostnamesManagerJoinListener());
+    if (this.config.getBoolean("tools.hostnamesmanager.enabled")) {
+      this.server.getEventManager().register(this, new HostnamesManagerListener(this));
+    }
     ///////////////////////////////////
   }
 
