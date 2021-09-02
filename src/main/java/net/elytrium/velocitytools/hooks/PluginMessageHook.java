@@ -95,8 +95,7 @@ public class PluginMessageHook extends PluginMessage {
 
   @Override
   public boolean handle(MinecraftSessionHandler handler) {
-    if (handler instanceof BackendPlaySessionHandler
-        && PluginMessageUtil.isMcBrand(this)) {
+    if (handler instanceof BackendPlaySessionHandler && PluginMessageUtil.isMcBrand(this)) {
       try {
         VelocityServer server = (VelocityServer) VelocityTools.getInstance().getServer();
         VelocityServerConnection serverConn = (VelocityServerConnection) serverConnField.get(handler);
@@ -104,7 +103,8 @@ public class PluginMessageHook extends PluginMessage {
 
         byte[] copy = ByteBufUtil.getBytes(this.content());
 
-        PluginMessageEvent result = server.getEventManager()
+        PluginMessageEvent result = server
+            .getEventManager()
             .fire(new PluginMessageEvent(player, serverConn, this::getChannel, copy))
             .get();
 

@@ -19,21 +19,17 @@
     #
     # Permissions:
     #   │
-    #   ├── Commands:
-    #   │   │
-    #   │   ├── /alert
-    #   │   │   └── velocitytools.command.alert
-    #   │   ├── /find
-    #   │   │   └── velocitytools.command.find
-    #   │   ├── /send
-    #   │   │   └── velocitytools.command.send
-    #   │   └── /hub
-    #   │       ├── velocitytools.command.hub
-    #   │       └── velocitytools.command.hub.bypass.<servername> (disabled-servers bypass permission)
-    #   └── Tools bypass:
+    #   └── Commands:
     #       │
-    #       └── HostnamesManager
-    #           └── velocitytools.tools.hostnamesmanager.bypass.<ip>
+    #       ├── /alert
+    #       │   └── velocitytools.command.alert
+    #       ├── /find
+    #       │   └── velocitytools.command.find
+    #       ├── /send
+    #       │   └── velocitytools.command.send
+    #       └── /hub
+    #           ├── velocitytools.command.hub
+    #           └── velocitytools.command.hub.bypass.<servername> (disabled-servers bypass permission)
     #
 
     [commands.alert]
@@ -92,6 +88,19 @@
         show-always = false
         # {0} - Original server brand (e.g. Paper)
         ingame_brand = "YourServer ({0})"
+    # Doesn't work with srv records
     [tools.hostnamesmanager]
-        block_joining = true
-        block_ping = false
+        enabled = true
+        # Logging the ip console from which the connection is made
+        debug = false
+        whitelist = false
+        kick_reason = "&cpPlease, don't use direct ip to connect!\nUse example.com"
+        hostnames = [
+            "your-domain.net",
+            "127.0.0.1"
+        ]
+        # List of IP addresses that will not be kicked
+        ignored-ips = [
+            "127.0.0.1",
+            "192.168.1.1"
+        ]
