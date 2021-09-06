@@ -37,7 +37,8 @@ import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
 import net.elytrium.velocitytools.hooks.PluginMessageHook;
 import net.elytrium.velocitytools.listeners.BrandChangerListener;
-import net.elytrium.velocitytools.listeners.HostnamesManagerListener;
+import net.elytrium.velocitytools.listeners.HostnamesManagerJoinListener;
+import net.elytrium.velocitytools.listeners.HostnamesManagerPingListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerPingListener;
 import org.slf4j.Logger;
@@ -133,16 +134,20 @@ public class VelocityTools {
       this.server.getEventManager().register(this, new BrandChangerListener(this));
     }
 
-    if (this.config.getBoolean("tools.protocolblocker.block_ping")) {
+    if (this.config.getBoolean("tools.protocolblocker.block-ping")) {
       this.server.getEventManager().register(this, new ProtocolBlockerPingListener(this));
     }
 
-    if (this.config.getBoolean("tools.protocolblocker.block_joining")) {
+    if (this.config.getBoolean("tools.protocolblocker.block-joining")) {
       this.server.getEventManager().register(this, new ProtocolBlockerJoinListener(this));
     }
 
-    if (this.config.getBoolean("tools.hostnamesmanager.enabled")) {
-      this.server.getEventManager().register(this, new HostnamesManagerListener(this));
+    if (this.config.getBoolean("tools.hostnamesmanager.block-ping")) {
+      this.server.getEventManager().register(this, new HostnamesManagerPingListener(this));
+    }
+
+    if (this.config.getBoolean("tools.hostnamesmanager.block-joining")) {
+      this.server.getEventManager().register(this, new HostnamesManagerJoinListener(this));
     }
     ///////////////////////////////////
   }
@@ -152,6 +157,10 @@ public class VelocityTools {
   }
 
   public ProxyServer getServer() {
-    return server;
+    return this.server;
+  }
+
+  public Logger getLogger() {
+    return this.logger;
   }
 }

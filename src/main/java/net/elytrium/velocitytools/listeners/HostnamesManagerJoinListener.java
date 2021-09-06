@@ -27,16 +27,18 @@ import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-public class HostnamesManagerListener {
+public class HostnamesManagerJoinListener {
 
   private final boolean debug;
+  private final boolean showBlocked;
   private final boolean whitelist;
   private final List<String> whitelistedIps;
   private final List<String> hostnames;
   private final Component kickReason;
 
-  public HostnamesManagerListener(VelocityTools plugin) {
+  public HostnamesManagerJoinListener(VelocityTools plugin) {
     this.debug = plugin.getConfig().getBoolean("tools.hostnamesmanager.debug");
+    this.showBlocked = plugin.getConfig().getBoolean("tools.hostnamesmanager.show-blocked");
     this.whitelist = plugin.getConfig().getBoolean("tools.hostnamesmanager.whitelist");
     this.hostnames = plugin.getConfig().getList("tools.hostnamesmanager.hostnames")
         .stream()
@@ -46,29 +48,38 @@ public class HostnamesManagerListener {
         .stream()
         .map(object -> Objects.toString(object, null))
         .collect(Collectors.toList());
-    this.kickReason = LegacyComponentSerializer
-        .legacyAmpersand()
-        .deserialize(plugin.getConfig().getString("tools.hostnamesmanager.kick_reason"));
+    if (plugin.getConfig().getString("tools.hostnamesmanager.kick-reason").equals("{DISCONNECTED}")) {
+      this.kickReason = Component.translatable("multiplayer.disconnect.generic");
+    } else {
+      this.kickReason = LegacyComponentSerializer
+          .legacyAmpersand()
+          .deserialize(plugin.getConfig().getString("tools.hostnamesmanager.kick-reason"));
+    }
   }
 
   @Subscribe
   public void onJoin(PreLoginEvent event) {
     InitialInboundConnection conn = (InitialInboundConnection) event.getConnection();
+    String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
 
     conn.getVirtualHost().ifPresent(inet -> {
-      if (this.debug) {
-        System.out.println(conn.getRemoteAddress() + ": " + inet.getHostName());
-      }
+      String log = event.getConnection().getRemoteAddress() + " is joining the server using: " + inet.getHostName();
       if (this.whitelist) {
-        if (!this.hostnames.contains(inet.getHostName())
-            && !this.whitelistedIps.contains(conn.getRemoteAddress().getAddress().getHostAddress())) {
+        if (!this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
           conn.disconnect(this.kickReason);
+          log += " §c(blocked)";
         }
       } else {
-        if (this.hostnames.contains(inet.getHostName())
-            && !this.whitelistedIps.contains(conn.getRemoteAddress().getAddress().getHostAddress())) {
+        if (this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
           conn.disconnect(this.kickReason);
+          log += " §c(blocked)";
         }
+      }
+      if (this.debug) {
+        if (!this.showBlocked && log.endsWith(" §c(blocked)")) {
+          return;
+        }
+        VelocityTools.getInstance().getLogger().info(log);
       }
     });
   }

@@ -66,8 +66,8 @@
 
 [tools]
     [tools.protocolblocker]
-        block_joining = true
-        block_ping = false
+        block-joining = true
+        block-ping = false
         # If true, all protocols except those on the list will be blocked
         whitelist = false
         # You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers
@@ -75,26 +75,30 @@
             9999,
             9998
         ]
-        # For block_ping
+        # For block-ping
         brand = "Version not supported!"
-        # For block_ping, set to "" to disable
+        # For block-ping, set to "" to disable
         motd = "&cVersion not supported!\n&eUse 1.12.2 or later"
-        # For block_joining
-        kick_reason = "&cYour version is unsupported!"
+        # For block-joining
+        kick-reason = "&cYour version is unsupported!"
     [tools.brandchanger]
         enabled = true
-        ping_brand = "YourServer 1.12.2-1.17.1"
+        ping-brand = "YourServer 1.12.2-1.17.1"
         # For ping
         show-always = false
         # {0} - Original server brand (e.g. Paper)
-        ingame_brand = "YourServer ({0})"
+        ingame-brand = "YourServer ({0})"
     # Doesn't work with srv records
     [tools.hostnamesmanager]
-        enabled = true
+        block-joining = true
+        block-ping = true
         # Logging the ip console from which the connection is made
         debug = false
+        # For debug
+        show-blocked = true
+        # For block-joining, use {DISCONNECTED} for vanilla reason
+        kick-reason = "&cpPlease, don't use direct ip to connect!\nUse example.com"
         whitelist = false
-        kick_reason = "&cpPlease, don't use direct ip to connect!\nUse example.com"
         hostnames = [
             "your-domain.net",
             "127.0.0.1"
