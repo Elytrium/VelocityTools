@@ -1,29 +1,37 @@
 plugins {
-    id 'java'
+    id "java"
     id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.1"
+    id "com.github.johnrengelman.shadow" version "7.0.0"
 }
 
-group = 'net.elytrium'
-version = '1.0-SNAPSHOT'
-compileJava.options.encoding = 'UTF-8'
+group = "net.elytrium"
+version = "1.0.0"
+compileJava.options.encoding = "UTF-8"
 
 repositories {
     mavenCentral()
     maven {
-        name = 'velocitypowered-repo'
-        url = 'https://nexus.velocitypowered.com/repository/maven-public/'
+        name = "velocitypowered-repo"
+        url = "https://nexus.velocitypowered.com/repository/maven-public/"
     }
 }
 
 dependencies {
-    compileOnly 'com.velocitypowered:velocity-api:3.0.1-SNAPSHOT'
-    annotationProcessor 'com.velocitypowered:velocity-api:3.0.1-SNAPSHOT'
+    implementation 'org.bstats:bstats-velocity:2.2.1'
 
-    compileOnly files('libs/3.0.0.jar')
+    annotationProcessor "com.velocitypowered:velocity-api:3.0.2-SNAPSHOT"
+
+    compileOnly files("libs/3.0.0.jar")
+}
+
+shadowJar {
+    relocate "org.bstats", "net.elytrium.velocitytools.bstats"
+
+    setClassifier("")
 }
 
 tasks.withType(JavaCompile) {
-    options.encoding = 'UTF-8'
+    options.encoding = "UTF-8"
 }
 
 def targetJavaVersion = 11
@@ -42,19 +50,21 @@ tasks.withType(JavaCompile).configureEach {
     }
 }
 
-def templateSource = file('src/main/templates')
-def templateDest = layout.buildDirectory.dir('generated/sources/templates')
-def generateTemplates = tasks.register('generateTemplates', Copy) { task ->
+def generateTemplates = tasks.register("generateTemplates", Copy) { task ->
     def props = [
-            'version': project.version
+        "version": project.version
     ]
     task.inputs.properties props
 
-    task.from templateSource
-    task.into templateDest
+    task.from file("src/main/templates")
+    task.into layout.buildDirectory.dir("generated/sources/templates")
     task.expand props
 }
 
-sourceSets.main.java.srcDir(generateTemplates.map { it.outputs })
+sourceSets.main.java.srcDir(generateTemplates.map {
+    it.outputs
+})
 
 rootProject.idea.project.settings.taskTriggers.afterSync generateTemplates
+
+build.dependsOn shadowJar

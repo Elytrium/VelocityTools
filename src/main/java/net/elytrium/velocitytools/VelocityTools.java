@@ -24,8 +24,13 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
+import java.net.URLConnection;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -41,6 +46,7 @@ import net.elytrium.velocitytools.listeners.HostnamesManagerJoinListener;
 import net.elytrium.velocitytools.listeners.HostnamesManagerPingListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerPingListener;
+import org.bstats.velocity.Metrics;
 import org.slf4j.Logger;
 
 @Plugin(
@@ -57,15 +63,19 @@ public class VelocityTools {
   private final ProxyServer server;
   private final Path dataDirectory;
   private final Logger logger;
+  private final Metrics.Factory metricsFactory;
 
   private Toml config;
 
   @Inject
-  public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger) {
+  public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory,
+      Logger logger, Metrics.Factory metricsFactory) {
     instance = this;
-    this.logger = logger;
+
     this.server = server;
     this.dataDirectory = dataDirectory;
+    this.logger = logger;
+    this.metricsFactory = metricsFactory;
   }
 
   @Subscribe
@@ -73,6 +83,9 @@ public class VelocityTools {
     this.reload();
 
     PluginMessageHook.init();
+
+    this.checkForUpdates();
+    this.metricsFactory.make(this, 12708);
   }
 
   public static VelocityTools getInstance() {
@@ -150,6 +163,28 @@ public class VelocityTools {
       this.server.getEventManager().register(this, new HostnamesManagerJoinListener(this));
     }
     ///////////////////////////////////
+  }
+
+  private void checkForUpdates() {
+    try {
+      URL url = new URL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION");
+      URLConnection conn = url.openConnection();
+      conn.setConnectTimeout(1200);
+      conn.setReadTimeout(1200);
+      try (BufferedReader in = new BufferedReader(new InputStreamReader(
+          conn.getInputStream(), StandardCharsets.UTF_8))) {
+        if (!BuildConstants.VERSION.contains("-DEV")) {
+          if (!in.readLine().trim().equalsIgnoreCase(BuildConstants.VERSION)) {
+            this.logger.error("****************************************");
+            this.logger.warn("The new update was found, please update.");
+            this.logger.warn("https://github.com/Elytrium/VelocityTools/releases/");
+            this.logger.error("****************************************");
+          }
+        }
+      }
+    } catch (IOException ex) {
+      this.logger.warn("Unable to check for updates.", ex);
+    }
   }
 
   public Toml getConfig() {
