@@ -48,7 +48,7 @@ public class BrandChangerListener {
             this.plugin.getConfig().getBoolean("tools.brandchanger.show-always")
                 ? -1
                 : event.getPing().getVersion().getProtocol(),
-            this.plugin.getConfig().getString("tools.brandchanger.ping_brand"))
+            this.plugin.getConfig().getString("tools.brandchanger.ping-brand"))
     );
     event.setPing(pong.build());
   }
@@ -59,7 +59,7 @@ public class BrandChangerListener {
     if (event.getIdentifier().getId().equals("MC|Brand") || event.getIdentifier().getId().equals("minecraft:brand")) {
       player.getConnection().write(this.rewriteMinecraftBrand(
           event,
-          this.plugin.getConfig().getString("tools.brandchanger.ingame_brand"),
+          this.plugin.getConfig().getString("tools.brandchanger.ingame-brand"),
           player.getProtocolVersion()
       ));
     }

@@ -24,7 +24,7 @@ public class ProtocolBlockerJoinListener {
     this.whitelist = plugin.getConfig().getBoolean("tools.protocolblocker.whitelist");
     this.kickReason = LegacyComponentSerializer
         .legacyAmpersand()
-        .deserialize(plugin.getConfig().getString("tools.protocolblocker.kick_reason"));
+        .deserialize(plugin.getConfig().getString("tools.protocolblocker.kick-reason"));
   }
 
   @Subscribe
