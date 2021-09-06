@@ -48,7 +48,7 @@ public class HostnamesManagerPingListener {
     MinecraftConnection connection;
     try {
       connection = (MinecraftConnection) mcConnectionField.get(event.getConnection());
-    } catch (IllegalAccessException ignored) {
+    } catch (IllegalArgumentException | IllegalAccessException ignored) {
       return;
     }
     String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
