@@ -21,6 +21,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
 import com.velocitypowered.api.network.ProtocolVersion;
+import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.ProtocolUtils;
@@ -55,6 +56,9 @@ public class BrandChangerListener {
 
   @Subscribe
   public void onMessage(PluginMessageEvent event) {
+    if (!(event.getSource() instanceof Player)) {
+      return;
+    }
     ConnectedPlayer player = (ConnectedPlayer) event.getSource();
     if (event.getIdentifier().getId().equals("MC|Brand") || event.getIdentifier().getId().equals("minecraft:brand")) {
       player.getConnection().write(this.rewriteMinecraftBrand(
