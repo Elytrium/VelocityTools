@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "net.elytrium"
-version = "1.0.1"
+version = "1.0.2-DEV"
 compileJava.options.encoding = "UTF-8"
 
 repositories {
