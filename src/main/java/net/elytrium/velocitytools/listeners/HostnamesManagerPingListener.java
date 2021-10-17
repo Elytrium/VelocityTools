@@ -3,17 +3,13 @@ package net.elytrium.velocitytools.listeners;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
-import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
-import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.hooks.InitialInboundConnectionHook;
 
 public class HostnamesManagerPingListener {
-
-  private static Field mcConnectionField;
-
   private final boolean debug;
   private final boolean showBlocked;
   private final boolean whitelist;
@@ -34,44 +30,38 @@ public class HostnamesManagerPingListener {
         .collect(Collectors.toList());
   }
 
-  static {
-    try {
-      mcConnectionField = InitialInboundConnection.class.getDeclaredField("connection");
-      mcConnectionField.setAccessible(true);
-    } catch (NoSuchFieldException e) {
-      e.printStackTrace();
-    }
-  }
-
   @Subscribe
   public void onPing(ProxyPingEvent event) {
     MinecraftConnection connection;
     try {
-      connection = (MinecraftConnection) mcConnectionField.get(event.getConnection());
+      connection = InitialInboundConnectionHook.get(event.getConnection());
     } catch (IllegalArgumentException | IllegalAccessException ignored) {
       return;
     }
-    String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
 
-    event.getConnection().getVirtualHost().ifPresent(inet -> {
-      String log = event.getConnection().getRemoteAddress() + " is pinging the server using: " + inet.getHostName();
-      if (this.whitelist) {
-        if (!this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
-          connection.close();
-          log += " §c(blocked)";
+    connection.eventLoop().execute(() -> {
+      String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
+
+      event.getConnection().getVirtualHost().ifPresent(inet -> {
+        String log = event.getConnection().getRemoteAddress() + " is pinging the server using: " + inet.getHostName();
+        if (this.whitelist) {
+          if (!this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
+            connection.close();
+            log += " §c(blocked)";
+          }
+        } else {
+          if (this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
+            connection.close();
+            log += " §c(blocked)";
+          }
         }
-      } else {
-        if (this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
-          connection.close();
-          log += " §c(blocked)";
+        if (this.debug) {
+          if (!this.showBlocked && log.endsWith(" §c(blocked)")) {
+            return;
+          }
+          VelocityTools.getInstance().getLogger().info(log);
         }
-      }
-      if (this.debug) {
-        if (!this.showBlocked && log.endsWith(" §c(blocked)")) {
-          return;
-        }
-        VelocityTools.getInstance().getLogger().info(log);
-      }
+      });
     });
   }
 }
