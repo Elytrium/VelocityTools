@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.hooks.InitialInboundConnectionHook;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
@@ -29,18 +30,26 @@ public class ProtocolBlockerJoinListener {
 
   @Subscribe
   public void onJoin(PreLoginEvent event) {
-    int playerProtocol = event.getConnection().getProtocolVersion().getProtocol();
+    InitialInboundConnection inboundConnection = (InitialInboundConnection) event.getConnection();
 
-    if (this.whitelist) {
-      if (!this.protocols.contains(playerProtocol)) {
-        event.getConnection().getVirtualHost().ifPresent(conn ->
-            ((InitialInboundConnection) event.getConnection()).disconnect(this.kickReason));
-      }
-    } else {
-      if (this.protocols.contains(playerProtocol)) {
-        event.getConnection().getVirtualHost().ifPresent(conn ->
-            ((InitialInboundConnection) event.getConnection()).disconnect(this.kickReason));
-      }
+    try {
+      InitialInboundConnectionHook.get(inboundConnection).eventLoop().execute(() -> {
+        int playerProtocol = event.getConnection().getProtocolVersion().getProtocol();
+
+        if (this.whitelist) {
+          if (!this.protocols.contains(playerProtocol)) {
+            event.getConnection().getVirtualHost().ifPresent(conn ->
+                (inboundConnection).disconnect(this.kickReason));
+          }
+        } else {
+          if (this.protocols.contains(playerProtocol)) {
+            event.getConnection().getVirtualHost().ifPresent(conn ->
+                (inboundConnection).disconnect(this.kickReason));
+          }
+        }
+      });
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
     }
   }
 }

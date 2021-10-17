@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.hooks.InitialInboundConnectionHook;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
@@ -60,27 +61,33 @@ public class HostnamesManagerJoinListener {
   @Subscribe
   public void onJoin(PreLoginEvent event) {
     InitialInboundConnection conn = (InitialInboundConnection) event.getConnection();
-    String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
+    try {
+      InitialInboundConnectionHook.get(conn).eventLoop().execute(() -> {
+        String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
 
-    conn.getVirtualHost().ifPresent(inet -> {
-      String log = event.getConnection().getRemoteAddress() + " is joining the server using: " + inet.getHostName();
-      if (this.whitelist) {
-        if (!this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
-          conn.disconnect(this.kickReason);
-          log += " §c(blocked)";
-        }
-      } else {
-        if (this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
-          conn.disconnect(this.kickReason);
-          log += " §c(blocked)";
-        }
-      }
-      if (this.debug) {
-        if (!this.showBlocked && log.endsWith(" §c(blocked)")) {
-          return;
-        }
-        VelocityTools.getInstance().getLogger().info(log);
-      }
-    });
+        conn.getVirtualHost().ifPresent(inet -> {
+          String log = event.getConnection().getRemoteAddress() + " is joining the server using: " + inet.getHostName();
+          if (this.whitelist) {
+            if (!this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
+              conn.disconnect(this.kickReason);
+              log += " §c(blocked)";
+            }
+          } else {
+            if (this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
+              conn.disconnect(this.kickReason);
+              log += " §c(blocked)";
+            }
+          }
+          if (this.debug) {
+            if (!this.showBlocked && log.endsWith(" §c(blocked)")) {
+              return;
+            }
+            VelocityTools.getInstance().getLogger().info(log);
+          }
+        });
+      });
+    } catch (IllegalAccessException e) {
+      e.printStackTrace();
+    }
   }
 }
