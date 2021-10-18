@@ -49,8 +49,7 @@ public class AlertCommand implements SimpleCommand {
     } else {
       Component component = LegacyComponentSerializer
           .legacyAmpersand()
-          .deserialize(
-              MessageFormat.format(this.plugin.getConfig().getString("commands.alert.prefix"), String.join(" ", args)));
+          .deserialize(MessageFormat.format(this.plugin.getConfig().getString("commands.alert.prefix"), String.join(" ", args)));
       if (this.server.getAllPlayers().size() == 0) {
         source.sendMessage(
             LegacyComponentSerializer

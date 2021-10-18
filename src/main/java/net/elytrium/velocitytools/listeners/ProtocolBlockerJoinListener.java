@@ -38,13 +38,11 @@ public class ProtocolBlockerJoinListener {
 
         if (this.whitelist) {
           if (!this.protocols.contains(playerProtocol)) {
-            event.getConnection().getVirtualHost().ifPresent(conn ->
-                (inboundConnection).disconnect(this.kickReason));
+            event.getConnection().getVirtualHost().ifPresent(conn -> (inboundConnection).disconnect(this.kickReason));
           }
         } else {
           if (this.protocols.contains(playerProtocol)) {
-            event.getConnection().getVirtualHost().ifPresent(conn ->
-                (inboundConnection).disconnect(this.kickReason));
+            event.getConnection().getVirtualHost().ifPresent(conn -> (inboundConnection).disconnect(this.kickReason));
           }
         }
       });

@@ -39,12 +39,9 @@ public class VelocityToolsCommand implements SimpleCommand {
     final String[] args = invocation.arguments();
 
     if (args.length == 0) {
-      return Stream.of("reload")
-          .collect(Collectors.toList());
+      return Stream.of("reload").collect(Collectors.toList());
     } else if (args.length == 1) {
-      return Stream.of("reload")
-          .filter(str -> str.regionMatches(true, 0, args[0], 0, args[0].length()))
-          .collect(Collectors.toList());
+      return Stream.of("reload").filter(str -> str.regionMatches(true, 0, args[0], 0, args[0].length())).collect(Collectors.toList());
     } else {
       return ImmutableList.of();
     }
@@ -66,7 +63,7 @@ public class VelocityToolsCommand implements SimpleCommand {
         } catch (Exception e) {
           e.printStackTrace();
 
-          source.sendMessage(Component.text("&cAn internal error has occurred!"));
+          source.sendMessage(Component.text("§cAn internal error has occurred!"));
         }
       } else {
         this.showHelp(source);

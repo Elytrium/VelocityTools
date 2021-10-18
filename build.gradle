@@ -1,6 +1,5 @@
 plugins {
     id "java"
-    id "org.jetbrains.gradle.plugin.idea-ext" version "1.0.1"
     id "com.github.johnrengelman.shadow" version "7.0.0"
 }
 
@@ -27,6 +26,7 @@ dependencies {
 shadowJar {
     relocate "org.bstats", "net.elytrium.velocitytools.bstats"
 
+    minimize()
     setClassifier("")
 }
 
@@ -34,20 +34,9 @@ tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
 }
 
-def targetJavaVersion = 11
 java {
-    def javaVersion = JavaVersion.toVersion(targetJavaVersion)
-    sourceCompatibility = javaVersion
-    targetCompatibility = javaVersion
-    if (JavaVersion.current() < javaVersion) {
-        toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release = targetJavaVersion
-    }
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 
 def generateTemplates = tasks.register("generateTemplates", Copy) { task ->
@@ -64,7 +53,5 @@ def generateTemplates = tasks.register("generateTemplates", Copy) { task ->
 sourceSets.main.java.srcDir(generateTemplates.map {
     it.outputs
 })
-
-rootProject.idea.project.settings.taskTriggers.afterSync generateTemplates
 
 build.dependsOn shadowJar
