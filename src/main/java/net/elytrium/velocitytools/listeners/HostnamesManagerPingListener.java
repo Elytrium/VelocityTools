@@ -10,6 +10,7 @@ import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.hooks.InitialInboundConnectionHook;
 
 public class HostnamesManagerPingListener {
+
   private final boolean debug;
   private final boolean showBlocked;
   private final boolean whitelist;

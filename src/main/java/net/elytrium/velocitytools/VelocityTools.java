@@ -68,8 +68,7 @@ public class VelocityTools {
   private Toml config;
 
   @Inject
-  public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory,
-      Logger logger, Metrics.Factory metricsFactory) {
+  public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
     instance = this;
 
     this.server = server;
@@ -92,17 +91,16 @@ public class VelocityTools {
     return instance;
   }
 
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   public void reload() {
     try {
       if (!this.dataDirectory.toFile().exists()) {
-        //noinspection ResultOfMethodCallIgnored
         this.dataDirectory.toFile().mkdir();
       }
 
       File configFile = new File(this.dataDirectory.toFile(), "config.toml");
       if (!configFile.exists()) {
-        Files.copy(Objects.requireNonNull(VelocityTools.class.getResourceAsStream("/config.toml")),
-            configFile.toPath()
+        Files.copy(Objects.requireNonNull(VelocityTools.class.getResourceAsStream("/config.toml")), configFile.toPath()
         );
       }
       this.config = new Toml().read(new File(this.dataDirectory.toFile(), "config.toml"));
@@ -114,11 +112,7 @@ public class VelocityTools {
     if (this.config.getBoolean("commands.hub.enabled") && !this.config.getList("commands.hub.aliases").isEmpty()) {
       List<String> aliases = this.config.getList("commands.hub.aliases");
       this.server.getCommandManager().unregister(aliases.get(0));
-      this.server.getCommandManager().register(
-          aliases.get(0),
-          new HubCommand(this, this.server),
-          aliases.toArray(new String[0])
-      );
+      this.server.getCommandManager().register(aliases.get(0), new HubCommand(this, this.server), aliases.toArray(new String[0]));
     }
 
     if (this.config.getBoolean("commands.alert.enabled")) {
@@ -165,6 +159,7 @@ public class VelocityTools {
     ///////////////////////////////////
   }
 
+  @SuppressWarnings({"ConstantConditions", "MismatchedStringCase"})
   private void checkForUpdates() {
     try {
       URL url = new URL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION");
@@ -176,8 +171,8 @@ public class VelocityTools {
         if (!BuildConstants.VERSION.contains("-DEV")) {
           if (!in.readLine().trim().equalsIgnoreCase(BuildConstants.VERSION)) {
             this.logger.error("****************************************");
-            this.logger.warn("The new update was found, please update.");
-            this.logger.warn("https://github.com/Elytrium/VelocityTools/releases/");
+            this.logger.warn("The new VelocityTools update was found, please update.");
+            this.logger.error("https://github.com/Elytrium/VelocityTools/releases/");
             this.logger.error("****************************************");
           }
         }
