@@ -118,7 +118,7 @@ public class SendCommand implements SimpleCommand {
         this.server.getAllPlayers().forEach(p ->
             p.createConnectionRequest(target).connectWithIndication()
                 .thenAccept(isSuccessful -> {
-                  sentPlayers.getAndIncrement();
+                  sentPlayers.incrementAndGet();
                   if (isSuccessful) {
                     p.sendMessage(summoned);
                   }
@@ -134,7 +134,7 @@ public class SendCommand implements SimpleCommand {
             serverConnection.getServer().getPlayersConnected().forEach(p ->
                 p.createConnectionRequest(target).connectWithIndication()
                     .thenAccept(isSuccessful -> {
-                      sentPlayers.getAndIncrement();
+                      sentPlayers.incrementAndGet();
                       if (isSuccessful) {
                         p.sendMessage(summoned);
                       }
@@ -148,7 +148,7 @@ public class SendCommand implements SimpleCommand {
           serverTarget.getPlayersConnected().forEach(p ->
               p.createConnectionRequest(target).connectWithIndication()
                   .thenAccept(isSuccessful -> {
-                    sentPlayers.getAndIncrement();
+                    sentPlayers.incrementAndGet();
                     if (isSuccessful) {
                       p.sendMessage(summoned);
                     }
@@ -158,7 +158,7 @@ public class SendCommand implements SimpleCommand {
           if (player != null) {
             player.createConnectionRequest(target).connectWithIndication()
                 .thenAccept(isSuccessful -> {
-                  sentPlayers.getAndIncrement();
+                  sentPlayers.incrementAndGet();
                   if (isSuccessful) {
                     player.sendMessage(summoned);
                   }
