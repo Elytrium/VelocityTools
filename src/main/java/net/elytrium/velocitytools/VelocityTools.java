@@ -24,6 +24,7 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import net.elytrium.velocitytools.commands.AlertCommand;
 import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
@@ -69,12 +71,16 @@ public class VelocityTools {
 
   @Inject
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
-    instance = this;
+    setInstance(this);
 
     this.server = server;
     this.dataDirectory = dataDirectory;
     this.logger = logger;
     this.metricsFactory = metricsFactory;
+  }
+
+  private static void setInstance(VelocityTools thisInst) {
+    instance = thisInst;
   }
 
   @Subscribe
@@ -92,6 +98,7 @@ public class VelocityTools {
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
+  @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
   public void reload() {
     try {
       if (!this.dataDirectory.toFile().exists()) {
@@ -161,24 +168,25 @@ public class VelocityTools {
 
   @SuppressWarnings({"ConstantConditions", "MismatchedStringCase"})
   private void checkForUpdates() {
-    try {
-      URL url = new URL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION");
-      URLConnection conn = url.openConnection();
-      conn.setConnectTimeout(1200);
-      conn.setReadTimeout(1200);
-      try (BufferedReader in = new BufferedReader(new InputStreamReader(
-          conn.getInputStream(), StandardCharsets.UTF_8))) {
-        if (!BuildConstants.VERSION.contains("-DEV")) {
-          if (!in.readLine().trim().equalsIgnoreCase(BuildConstants.VERSION)) {
+    if (!BuildConstants.VERSION.contains("-DEV")) {
+      try {
+        URL url = new URL("https://raw.githubusercontent.com/Elytrium/LimboAPI/master/VERSION");
+        URLConnection conn = url.openConnection();
+        int timeout = (int) TimeUnit.SECONDS.toMillis(4);
+        conn.setConnectTimeout(timeout);
+        conn.setReadTimeout(timeout);
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
+          String version = in.readLine();
+          if (version != null && !version.trim().equalsIgnoreCase(BuildConstants.VERSION)) {
             this.logger.error("****************************************");
             this.logger.warn("The new VelocityTools update was found, please update.");
             this.logger.error("https://github.com/Elytrium/VelocityTools/releases/");
             this.logger.error("****************************************");
           }
         }
+      } catch (IOException ex) {
+        this.logger.warn("Unable to check for updates.", ex);
       }
-    } catch (IOException ex) {
-      this.logger.warn("Unable to check for updates.", ex);
     }
   }
 
