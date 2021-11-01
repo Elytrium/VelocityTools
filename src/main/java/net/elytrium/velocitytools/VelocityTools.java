@@ -107,8 +107,7 @@ public class VelocityTools {
 
       File configFile = new File(this.dataDirectory.toFile(), "config.toml");
       if (!configFile.exists()) {
-        Files.copy(Objects.requireNonNull(VelocityTools.class.getResourceAsStream("/config.toml")), configFile.toPath()
-        );
+        Files.copy(Objects.requireNonNull(VelocityTools.class.getResourceAsStream("/config.toml")), configFile.toPath());
       }
       this.config = new Toml().read(new File(this.dataDirectory.toFile(), "config.toml"));
     } catch (IOException e) {
@@ -170,7 +169,7 @@ public class VelocityTools {
   private void checkForUpdates() {
     if (!BuildConstants.VERSION.contains("-DEV")) {
       try {
-        URL url = new URL("https://raw.githubusercontent.com/Elytrium/LimboAPI/master/VERSION");
+        URL url = new URL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION");
         URLConnection conn = url.openConnection();
         int timeout = (int) TimeUnit.SECONDS.toMillis(4);
         conn.setConnectTimeout(timeout);
