@@ -19,11 +19,11 @@ package net.elytrium.velocitytools.hooks;
 
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.network.ProtocolVersion;
+import com.velocitypowered.api.proxy.messages.ChannelIdentifier;
 import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
 import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
-import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.StateRegistry;
 import com.velocitypowered.proxy.protocol.packet.PluginMessage;
@@ -45,6 +45,7 @@ public class PluginMessageHook extends PluginMessage {
 
   private static Field serverConnField;
 
+  @SuppressWarnings("unchecked")
   public static void init() {
     try {
       serverConnField = BackendPlaySessionHandler.class.getDeclaredField("serverConn");
@@ -53,27 +54,20 @@ public class PluginMessageHook extends PluginMessage {
       Field versionsField = StateRegistry.PacketRegistry.class.getDeclaredField("versions");
       versionsField.setAccessible(true);
 
-      Field packetIdToSupplierField = StateRegistry.PacketRegistry.ProtocolRegistry.class
-          .getDeclaredField("packetIdToSupplier");
+      Field packetIdToSupplierField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetIdToSupplier");
       packetIdToSupplierField.setAccessible(true);
 
-      Field packetClassToIdField = StateRegistry.PacketRegistry.ProtocolRegistry.class
-          .getDeclaredField("packetClassToId");
+      Field packetClassToIdField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetClassToId");
       packetClassToIdField.setAccessible(true);
 
-      //noinspection unchecked
       Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry> versions
-          = (Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>)
-          versionsField.get(StateRegistry.PLAY.clientbound);
+          = (Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.get(StateRegistry.PLAY.clientbound);
 
-      BiConsumer<? super ProtocolVersion, ? super StateRegistry.PacketRegistry.ProtocolRegistry> consumer
-          = (version, registry) -> {
+      BiConsumer<? super ProtocolVersion, ? super StateRegistry.PacketRegistry.ProtocolRegistry> consumer = (version, registry) -> {
         try {
-          //noinspection unchecked
           IntObjectMap<Supplier<? extends MinecraftPacket>> packetIdToSupplier
               = (IntObjectMap<Supplier<? extends MinecraftPacket>>) packetIdToSupplierField.get(registry);
 
-          //noinspection unchecked
           Object2IntMap<Class<? extends MinecraftPacket>> packetClassToId
               = (Object2IntMap<Class<? extends MinecraftPacket>>) packetClassToIdField.get(registry);
 
@@ -99,16 +93,14 @@ public class PluginMessageHook extends PluginMessage {
       try {
         VelocityServer server = (VelocityServer) VelocityTools.getInstance().getServer();
         VelocityServerConnection serverConn = (VelocityServerConnection) serverConnField.get(handler);
-        ConnectedPlayer player = serverConn.getPlayer();
+
+        ChannelIdentifier id = server.getChannelRegistrar().getFromId(this.getChannel());
+        if (id == null) {
+          return false;
+        }
 
         byte[] copy = ByteBufUtil.getBytes(this.content());
-
-        PluginMessageEvent result = server
-            .getEventManager()
-            .fire(new PluginMessageEvent(player, serverConn, this::getChannel, copy))
-            .get();
-
-        if (result.getResult().isAllowed()) {
+        if (server.getEventManager().fire(new PluginMessageEvent(serverConn.getPlayer(), serverConn, id, copy)).get().getResult().isAllowed()) {
           return super.handle(handler);
         } else {
           return true;

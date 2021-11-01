@@ -1,34 +1,19 @@
+//file:noinspection GroovyAssignabilityCheck
+
+import com.github.spotbugs.snom.SpotBugsTask
+
 plugins {
     id "java"
+    id "checkstyle"
+    id "com.github.spotbugs" version "4.7.9"
+    id "org.cadixdev.licenser" version "0.6.1"
     id "com.github.johnrengelman.shadow" version "7.0.0"
 }
 
 group = "net.elytrium"
 version = "1.0.2"
+
 compileJava.options.encoding = "UTF-8"
-
-repositories {
-    mavenCentral()
-    maven {
-        name = "velocitypowered-repo"
-        url = "https://nexus.velocitypowered.com/repository/maven-public/"
-    }
-}
-
-dependencies {
-    implementation "org.bstats:bstats-velocity:2.2.1"
-
-    annotationProcessor "com.velocitypowered:velocity-api:3.0.2-SNAPSHOT"
-
-    compileOnly files("libs/3.0.0.jar")
-}
-
-shadowJar {
-    relocate "org.bstats", "net.elytrium.velocitytools.bstats"
-
-    minimize()
-    setClassifier("")
-}
 
 tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
@@ -39,18 +24,61 @@ java {
     targetCompatibility = JavaVersion.VERSION_11
 }
 
-def generateTemplates = tasks.register("generateTemplates", Copy) { task ->
-    def props = [
-        "version": project.version
-    ]
-    task.inputs.properties props
+repositories {
+    mavenCentral()
+    maven {
+        name = "velocitypowered-repo"
+        url = "https://nexus.velocitypowered.com/repository/maven-public/"
+    }
+}
+
+dependencies {
+    compileOnly files("libs/3.0.0.jar")
+    annotationProcessor "com.velocitypowered:velocity-api:3.0.2-SNAPSHOT"
+
+    implementation "org.bstats:bstats-velocity:2.2.1"
+
+    compileOnly "com.github.spotbugs:spotbugs-annotations:4.4.2"
+}
+
+shadowJar {
+    relocate "org.bstats", "net.elytrium.velocitytools.bstats"
+
+    minimize()
+    setClassifier("")
+}
+
+license {
+    header = project.rootProject.file("HEADER.txt")
+}
+
+checkstyle {
+    toolVersion "9.0.1"
+    configFile file("${project.rootDir}/config/checkstyle/checkstyle.xml")
+    configProperties = [configDirectory: "${project.rootDir}/config/checkstyle"]
+
+    // The build should immediately fail if we have errors.
+    maxErrors = 0
+    maxWarnings = 0
+}
+
+tasks.withType(SpotBugsTask) {
+    reports {
+        html {
+            enabled = true
+            destination = file("$buildDir/reports/spotbugs/main/spotbugs.html")
+            stylesheet = "fancy-hist.xsl"
+        }
+    }
+}
+
+sourceSets.main.java.srcDir(tasks.register("generateTemplates", Copy) { task ->
+    task.inputs.properties "version": project.version
 
     task.from file("src/main/templates")
     task.into layout.buildDirectory.dir("generated/sources/templates")
-    task.expand props
-}
-
-sourceSets.main.java.srcDir(generateTemplates.map {
+    task.expand "version": project.version
+}.map {
     it.outputs
 })
 
