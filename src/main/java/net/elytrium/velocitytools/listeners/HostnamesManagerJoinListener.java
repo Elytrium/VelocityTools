@@ -20,72 +20,40 @@ package net.elytrium.velocitytools.listeners;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
 import net.elytrium.velocitytools.hooks.InitialInboundConnectionHook;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class HostnamesManagerJoinListener {
 
-  private final boolean debug;
-  private final boolean showBlocked;
-  private final boolean whitelist;
-  private final List<String> whitelistedIps;
-  private final List<String> hostnames;
   private final Component kickReason;
+  private final HostnamesManagerHandler handler;
 
   public HostnamesManagerJoinListener(VelocityTools plugin) {
-    this.debug = plugin.getConfig().getBoolean("tools.hostnamesmanager.debug");
-    this.showBlocked = plugin.getConfig().getBoolean("tools.hostnamesmanager.show-blocked");
-    this.whitelist = plugin.getConfig().getBoolean("tools.hostnamesmanager.whitelist");
-    this.hostnames = plugin.getConfig().getList("tools.hostnamesmanager.hostnames")
-        .stream()
-        .map(object -> Objects.toString(object, null))
-        .collect(Collectors.toList());
-    this.whitelistedIps = plugin.getConfig().getList("tools.hostnamesmanager.ignored-ips")
-        .stream()
-        .map(object -> Objects.toString(object, null))
-        .collect(Collectors.toList());
     if (plugin.getConfig().getString("tools.hostnamesmanager.kick-reason").equals("{DISCONNECTED}")) {
       this.kickReason = Component.translatable("multiplayer.disconnect.generic");
     } else {
-      this.kickReason = LegacyComponentSerializer
-          .legacyAmpersand()
-          .deserialize(plugin.getConfig().getString("tools.hostnamesmanager.kick-reason"));
+      this.kickReason = LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("tools.hostnamesmanager.kick-reason"));
     }
+
+    this.handler = new HostnamesManagerHandler(plugin);
   }
 
   @Subscribe
   public void onJoin(PreLoginEvent event) {
-    InitialInboundConnection conn = (InitialInboundConnection) event.getConnection();
     try {
-      InitialInboundConnectionHook.get(conn).eventLoop().execute(() -> {
-        String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
-
-        conn.getVirtualHost().ifPresent(inet -> {
-          String log = event.getConnection().getRemoteAddress() + " is joining the server using: " + inet.getHostName();
-          if (this.whitelist) {
-            if (!this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
+      InitialInboundConnection conn = (InitialInboundConnection) event.getConnection();
+      InitialInboundConnectionHook.get(conn).eventLoop().execute(() ->
+          conn.getVirtualHost().ifPresent(inet -> {
+            String remoteAddress = event.getConnection().getRemoteAddress().getAddress().getHostAddress();
+            String log = event.getConnection().getRemoteAddress() + " is joining the server using: " + inet.getHostName();
+            if (this.handler.checkAddress(inet.getHostName(), remoteAddress, log)) {
               conn.disconnect(this.kickReason);
-              log += " §c(blocked)";
             }
-          } else {
-            if (this.hostnames.contains(inet.getHostName()) && !this.whitelistedIps.contains(remoteAddress)) {
-              conn.disconnect(this.kickReason);
-              log += " §c(blocked)";
-            }
-          }
-          if (this.debug) {
-            if (!this.showBlocked && log.endsWith(" §c(blocked)")) {
-              return;
-            }
-            VelocityTools.getInstance().getLogger().info(log);
-          }
-        });
-      });
+          })
+      );
     } catch (IllegalAccessException e) {
       e.printStackTrace();
     }

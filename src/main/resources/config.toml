@@ -35,24 +35,24 @@
     [commands.alert]
         enabled = true
         prefix = "&8[&4Alert&8] &r{0}"
-        message-needed = "&cYou must supply a message."
+        message-needed = "&cYou must supply the message."
         empty-proxy = "&cNo one is connected to this proxy!"
     [commands.find]
         enabled = true
-        username-needed = "&cYou must supply a username."
+        username-needed = "&cYou must supply the username."
         player-online-at = "&6{0} &fis online at &6{1}"
         player-not-online = "&6{0} &fis not online."
     [commands.send]
         enabled = true
         console = "CONSOLE"
-        not-enough-arguments = "&fNot enough arguments, usage: &6/send <server|player|all|current> <target>"
+        not-enough-arguments = "&fNot enough arguments. Usage: &6/send <server|player|all|current> <target>"
         you-got-summoned = "&fSummoned to &6{0} &fby &6{1}"
         player-not-online = "&6{0} &fis not online."
         callback = "&aAttempting to send {0} players to {1}"
     [commands.hub]
         enabled = true
         server = "hub"
-        # Set to "" to disable
+        # Set to "" to disable.
         you-got-moved = "&aYou have been moved to a hub!"
         disabled-server-message = "&cYou cannot use this command here."
         disabled-servers = [
@@ -68,43 +68,45 @@
     [tools.protocolblocker]
         block-joining = true
         block-ping = false
-        # If true, all protocols except those on the list will be blocked
+        # If true, all protocols except those listed below will be blocked.
         whitelist = false
         # You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers
         protocols = [
             9999,
             9998
         ]
-        # For block-ping
-        brand = "Version not supported!"
-        # For block-ping, set to "" to disable
-        motd = "&cVersion not supported!\n&eUse 1.12.2 or later"
-        # For block-joining
+        # For "block-ping" option.
+        brand = "Version is not supported!"
+        # For "block-ping", set to "" to disable.
+        motd = "&cVersion is not supported!\n&ePlease, join with Minecraft 1.12.2 or newer."
+        # For "block-joining" option.
         kick-reason = "&cYour version is unsupported!"
     [tools.brandchanger]
         enabled = true
         ping-brand = "YourServer 1.12.2-1.17.1"
-        # For ping
+        # For ping.
         show-always = false
-        # {0} - Original server brand (e.g. Paper)
+        # {0} - Original server brand (e.g. Paper).
         ingame-brand = "YourServer ({0})"
-    # Doesn't work with srv records
+    # Doesn't work with srv records.
     [tools.hostnamesmanager]
         block-joining = true
         block-ping = true
-        # Logging the ip console from which the connection is made
+        # Connections IP logging.
         debug = false
-        # For debug
-        show-blocked = true
-        # For block-joining, use {DISCONNECTED} for vanilla reason
-        kick-reason = "&cpPlease, don't use direct ip to connect!\nUse example.com"
-        whitelist = false
+        # For "debug" option.
+        show-blocked-only = true
+        # For "block-joining" option, use {DISCONNECTED} to show the default reason.
+        kick-reason = "&cPlease, don't connect to the direct ip!\nUse example.com"
+        whitelist = true
+        # IP Addresses starting with "127." or equal to "localhost" will be blocked.
+        block-local-addresses = true
         hostnames = [
             "your-domain.net",
-            "127.0.0.1"
+            "your-domain.com"
         ]
-        # List of IP addresses that will not be kicked
+        # List of IP addresses that will bypass this check.
         ignored-ips = [
-            "127.0.0.1",
-            "192.168.1.1"
+            "79.555.*",
+            "228.1337.*"
         ]

@@ -37,24 +37,20 @@ public class AlertCommand implements SimpleCommand {
   }
 
   @Override
-  public void execute(final SimpleCommand.Invocation invocation) {
-    final CommandSource source = invocation.source();
-    final String[] args = invocation.arguments();
+  public void execute(SimpleCommand.Invocation invocation) {
+    CommandSource source = invocation.source();
+    String[] args = invocation.arguments();
 
     if (args.length == 0) {
       source.sendMessage(
-          LegacyComponentSerializer
-              .legacyAmpersand()
-              .deserialize(this.plugin.getConfig().getString("commands.alert.message-needed")));
+          LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.alert.message-needed"))
+      );
     } else {
-      Component component = LegacyComponentSerializer
-          .legacyAmpersand()
-          .deserialize(MessageFormat.format(this.plugin.getConfig().getString("commands.alert.prefix"), String.join(" ", args)));
+      Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(
+          MessageFormat.format(this.plugin.getConfig().getString("commands.alert.prefix"), String.join(" ", args))
+      );
       if (this.server.getAllPlayers().size() == 0) {
-        source.sendMessage(
-            LegacyComponentSerializer
-                .legacyAmpersand()
-                .deserialize(this.plugin.getConfig().getString("commands.alert.empty-proxy")));
+        source.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.alert.empty-proxy")));
       } else if (this.server.getAllPlayers().size() >= 1) {
         if (!(source instanceof Player)) {
           source.sendMessage(component);
@@ -67,7 +63,7 @@ public class AlertCommand implements SimpleCommand {
   }
 
   @Override
-  public boolean hasPermission(final SimpleCommand.Invocation invocation) {
+  public boolean hasPermission(SimpleCommand.Invocation invocation) {
     return invocation.source().hasPermission("velocitytools.command.alert");
   }
 }

@@ -24,7 +24,6 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.proxy.command.builtin.CommandMessages;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
@@ -42,14 +41,13 @@ public class HubCommand implements SimpleCommand {
 
     this.disabledServers = this.plugin.getConfig().getList("commands.hub.disabled-servers")
         .stream()
-        .map(object -> Objects.toString(object, null))
+        .map(Object::toString)
         .collect(Collectors.toList());
   }
 
   @Override
-  public void execute(final SimpleCommand.Invocation invocation) {
-    final CommandSource source = invocation.source();
-
+  public void execute(SimpleCommand.Invocation invocation) {
+    CommandSource source = invocation.source();
     if (!(source instanceof Player)) {
       source.sendMessage(CommandMessages.PLAYERS_ONLY);
       return;
@@ -59,7 +57,6 @@ public class HubCommand implements SimpleCommand {
     String serverName = this.plugin.getConfig().getString("commands.hub.server");
 
     RegisteredServer toConnect = this.server.getServer(serverName).orElse(null);
-
     if (toConnect == null) {
       source.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(serverName)));
       return;
@@ -68,20 +65,17 @@ public class HubCommand implements SimpleCommand {
     player.getCurrentServer().ifPresent(serverConnection -> {
       String servername = serverConnection.getServer().getServerInfo().getName();
 
-      if (this.disabledServers.stream().anyMatch(servername::equals)
-          && !player.hasPermission("velocitytools.command.hub.bypass." + servername)) {
+      if (this.disabledServers.stream().anyMatch(servername::equals) && !player.hasPermission("velocitytools.command.hub.bypass." + servername)) {
         player.sendMessage(
-            LegacyComponentSerializer
-                .legacyAmpersand()
-                .deserialize(this.plugin.getConfig().getString("commands.hub.disabled-server-message")));
+            LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.hub.disabled-server-message"))
+        );
       } else {
         player.createConnectionRequest(toConnect).connectWithIndication()
             .thenAccept(isSuccessful -> {
               if (isSuccessful && !this.plugin.getConfig().getString("commands.hub.you-got-moved").isEmpty()) {
                 player.sendMessage(
-                    LegacyComponentSerializer
-                        .legacyAmpersand()
-                        .deserialize(this.plugin.getConfig().getString("commands.hub.you-got-moved")));
+                    LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.hub.you-got-moved"))
+                );
               }
             });
       }
@@ -89,7 +83,7 @@ public class HubCommand implements SimpleCommand {
   }
 
   @Override
-  public boolean hasPermission(final SimpleCommand.Invocation invocation) {
+  public boolean hasPermission(SimpleCommand.Invocation invocation) {
     return invocation.source().hasPermission("velocitytools.command.hub");
   }
 }
