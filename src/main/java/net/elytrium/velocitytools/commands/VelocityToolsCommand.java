@@ -35,8 +35,8 @@ public class VelocityToolsCommand implements SimpleCommand {
   }
 
   @Override
-  public List<String> suggest(final SimpleCommand.Invocation invocation) {
-    final String[] args = invocation.arguments();
+  public List<String> suggest(SimpleCommand.Invocation invocation) {
+    String[] args = invocation.arguments();
 
     if (args.length == 0) {
       return Stream.of("reload").collect(Collectors.toList());
@@ -48,9 +48,9 @@ public class VelocityToolsCommand implements SimpleCommand {
   }
 
   @Override
-  public void execute(final SimpleCommand.Invocation invocation) {
-    final CommandSource source = invocation.source();
-    final String[] args = invocation.arguments();
+  public void execute(SimpleCommand.Invocation invocation) {
+    CommandSource source = invocation.source();
+    String[] args = invocation.arguments();
 
     if (args.length == 0) {
       this.showHelp(source);
@@ -58,11 +58,9 @@ public class VelocityToolsCommand implements SimpleCommand {
       if (args[0].equalsIgnoreCase("reload") && source.hasPermission("velocitytools.command.reload")) {
         try {
           this.plugin.reload();
-
           source.sendMessage(Component.text("§aСonfig reloaded successfully!"));
         } catch (Exception e) {
           e.printStackTrace();
-
           source.sendMessage(Component.text("§cAn internal error has occurred!"));
         }
       } else {

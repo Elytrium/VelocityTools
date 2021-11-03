@@ -115,9 +115,9 @@ public class VelocityTools {
     }
 
     // Commands /////////////////////////
+    List<String> aliases = this.config.getList("commands.hub.aliases");
+    aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
     if (this.config.getBoolean("commands.hub.enabled") && !this.config.getList("commands.hub.aliases").isEmpty()) {
-      List<String> aliases = this.config.getList("commands.hub.aliases");
-      this.server.getCommandManager().unregister(aliases.get(0));
       this.server.getCommandManager().register(aliases.get(0), new HubCommand(this, this.server), aliases.toArray(new String[0]));
     }
 

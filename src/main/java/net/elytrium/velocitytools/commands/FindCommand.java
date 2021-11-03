@@ -41,8 +41,8 @@ public class FindCommand implements SimpleCommand {
   }
 
   @Override
-  public List<String> suggest(final SimpleCommand.Invocation invocation) {
-    final String[] args = invocation.arguments();
+  public List<String> suggest(SimpleCommand.Invocation invocation) {
+    String[] args = invocation.arguments();
 
     if (args.length == 0) {
       return this.server.getAllPlayers().stream()
@@ -59,44 +59,38 @@ public class FindCommand implements SimpleCommand {
   }
 
   @Override
-  public void execute(final SimpleCommand.Invocation invocation) {
-    final CommandSource source = invocation.source();
-    final String[] args = invocation.arguments();
+  public void execute(SimpleCommand.Invocation invocation) {
+    CommandSource source = invocation.source();
+    String[] args = invocation.arguments();
 
     if (args.length == 0) {
-      source.sendMessage(
-          LegacyComponentSerializer
-              .legacyAmpersand()
-              .deserialize(this.plugin.getConfig().getString("commands.find.username-needed")));
+      source.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.find.username-needed")));
     } else {
       Optional<Player> player = this.server.getPlayer(args[0]);
       if (player.isPresent()) {
-        Player pl = player.get();
-        Optional<ServerConnection> server = pl.getCurrentServer();
-        server.ifPresent(srv -> source.sendMessage(
-            LegacyComponentSerializer
-                .legacyAmpersand()
-                .deserialize(
+        Player player0 = player.get();
+        Optional<ServerConnection> server = player0.getCurrentServer();
+        server.ifPresent(srv ->
+            source.sendMessage(
+                LegacyComponentSerializer.legacyAmpersand().deserialize(
                     MessageFormat.format(
-                        this.plugin.getConfig().getString("commands.find.player-online-at"),
-                        pl.getUsername(),
-                        srv.getServerInfo().getName()))
-        ));
+                        this.plugin.getConfig().getString("commands.find.player-online-at"), player0.getUsername(), srv.getServerInfo().getName()
+                    )
+                )
+            )
+        );
       } else {
         source.sendMessage(
-            LegacyComponentSerializer
-                .legacyAmpersand()
-                .deserialize(
-                    MessageFormat.format(
-                        this.plugin.getConfig().getString("commands.find.player-not-online"),
-                        args[0]))
+            LegacyComponentSerializer.legacyAmpersand().deserialize(
+                MessageFormat.format(this.plugin.getConfig().getString("commands.find.player-not-online"), args[0])
+            )
         );
       }
     }
   }
 
   @Override
-  public boolean hasPermission(final SimpleCommand.Invocation invocation) {
+  public boolean hasPermission(SimpleCommand.Invocation invocation) {
     return invocation.source().hasPermission("velocitytools.command.find");
   }
 }

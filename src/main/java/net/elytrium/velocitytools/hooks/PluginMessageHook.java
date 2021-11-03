@@ -19,7 +19,6 @@ package net.elytrium.velocitytools.hooks;
 
 import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.network.ProtocolVersion;
-import com.velocitypowered.api.proxy.messages.ChannelIdentifier;
 import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
@@ -92,15 +91,10 @@ public class PluginMessageHook extends PluginMessage {
     if (handler instanceof BackendPlaySessionHandler && PluginMessageUtil.isMcBrand(this)) {
       try {
         VelocityServer server = (VelocityServer) VelocityTools.getInstance().getServer();
-        VelocityServerConnection serverConn = (VelocityServerConnection) serverConnField.get(handler);
-
-        ChannelIdentifier id = server.getChannelRegistrar().getFromId(this.getChannel());
-        if (id == null) {
-          return false;
-        }
+        VelocityServerConnection srvConn = (VelocityServerConnection) serverConnField.get(handler);
 
         byte[] copy = ByteBufUtil.getBytes(this.content());
-        if (server.getEventManager().fire(new PluginMessageEvent(serverConn.getPlayer(), serverConn, id, copy)).get().getResult().isAllowed()) {
+        if (server.getEventManager().fire(new PluginMessageEvent(srvConn.getPlayer(), srvConn, this::getChannel, copy)).get().getResult().isAllowed()) {
           return super.handle(handler);
         } else {
           return true;

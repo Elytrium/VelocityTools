@@ -44,35 +44,32 @@ public class SendCommand implements SimpleCommand {
   }
 
   @Override
-  public List<String> suggest(final SimpleCommand.Invocation invocation) {
-    final String[] args = invocation.arguments();
+  public List<String> suggest(SimpleCommand.Invocation invocation) {
+    String[] args = invocation.arguments();
 
     if (args.length < 2) {
-      List<String> playersToReturn = this.server.getAllPlayers()
-          .stream()
+      List<String> players = this.server.getAllPlayers().stream()
           .map(Player::getUsername)
           .collect(Collectors.toList());
 
-      List<String> serverNames = this.server.getAllServers()
-          .stream()
+      List<String> serversNames = this.server.getAllServers().stream()
           .map(RegisteredServer::getServerInfo)
           .map(ServerInfo::getName)
           .collect(Collectors.toList());
-      serverNames.add("ALL");
-      serverNames.add("CURRENT");
+      serversNames.add("ALL");
+      serversNames.add("CURRENT");
 
-      playersToReturn.addAll(serverNames);
+      players.addAll(serversNames);
 
       if (args.length == 0) {
-        return playersToReturn;
+        return players;
       } else {
-        return playersToReturn.stream()
+        return players.stream()
             .filter(name -> name.regionMatches(true, 0, args[0], 0, args[0].length()))
             .collect(Collectors.toList());
       }
     } else if (args.length == 2) {
-      return this.server.getAllServers()
-          .stream()
+      return this.server.getAllServers().stream()
           .map(RegisteredServer::getServerInfo)
           .map(ServerInfo::getName)
           .filter(name -> name.regionMatches(true, 0, args[1], 0, args[1].length()))
@@ -83,36 +80,31 @@ public class SendCommand implements SimpleCommand {
   }
 
   @Override
-  public void execute(final SimpleCommand.Invocation invocation) {
-    final CommandSource source = invocation.source();
-    final String[] args = invocation.arguments();
+  public void execute(SimpleCommand.Invocation invocation) {
+    CommandSource source = invocation.source();
+    String[] args = invocation.arguments();
 
     if (args.length != 2) {
       source.sendMessage(
-          LegacyComponentSerializer
-              .legacyAmpersand()
-              .deserialize(this.plugin.getConfig().getString("commands.send.not-enough-arguments")));
+          LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.send.not-enough-arguments"))
+      );
       return;
     }
 
     RegisteredServer target = this.server.getServer(args[1]).orElse(null);
-
     if (target == null) {
       source.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(args[1])));
       return;
     }
 
-    Component summoned = LegacyComponentSerializer
-        .legacyAmpersand()
-        .deserialize(MessageFormat.format(
-            this.plugin.getConfig().getString("commands.send.you-got-summoned"),
-            target.getServerInfo().getName(),
-            ((source instanceof Player)
-                ? ((Player) source).getUsername()
-                : this.plugin.getConfig().getString("commands.send.console"))));
+    Component summoned = LegacyComponentSerializer.legacyAmpersand().deserialize(
+        MessageFormat.format(
+            this.plugin.getConfig().getString("commands.send.you-got-summoned"), target.getServerInfo().getName(),
+            ((source instanceof Player) ? ((Player) source).getUsername() : this.plugin.getConfig().getString("commands.send.console"))
+        )
+    );
 
     AtomicInteger sentPlayers = new AtomicInteger();
-
     switch (args[0].toLowerCase()) {
       case "all": {
         this.server.getAllPlayers().forEach(p ->
@@ -130,6 +122,7 @@ public class SendCommand implements SimpleCommand {
           source.sendMessage(CommandMessages.PLAYERS_ONLY);
           break;
         }
+
         ((Player) source).getCurrentServer().ifPresent(serverConnection ->
             serverConnection.getServer().getPlayersConnected().forEach(p ->
                 p.createConnectionRequest(target).connectWithIndication()
@@ -143,7 +136,6 @@ public class SendCommand implements SimpleCommand {
       }
       default: {
         RegisteredServer serverTarget = this.server.getServer(args[0]).orElse(null);
-
         if (serverTarget != null) {
           serverTarget.getPlayersConnected().forEach(p ->
               p.createConnectionRequest(target).connectWithIndication()
@@ -165,13 +157,10 @@ public class SendCommand implements SimpleCommand {
                 });
           } else {
             source.sendMessage(
-                LegacyComponentSerializer
-                    .legacyAmpersand()
-                    .deserialize(
-                        MessageFormat.format(
-                            this.plugin.getConfig().getString("commands.send.player-not-online"),
-                            args[0])
-                    ));
+                LegacyComponentSerializer.legacyAmpersand().deserialize(
+                    MessageFormat.format(this.plugin.getConfig().getString("commands.send.player-not-online"), args[0])
+                )
+            );
           }
         }
         break;
@@ -179,18 +168,14 @@ public class SendCommand implements SimpleCommand {
     }
 
     source.sendMessage(
-        LegacyComponentSerializer
-            .legacyAmpersand()
-            .deserialize(
-                MessageFormat.format(
-                    this.plugin.getConfig().getString("commands.send.callback"),
-                    sentPlayers.get(),
-                    target.getServerInfo().getName())
-            ));
+        LegacyComponentSerializer.legacyAmpersand().deserialize(
+            MessageFormat.format(this.plugin.getConfig().getString("commands.send.callback"), sentPlayers.get(), target.getServerInfo().getName())
+        )
+    );
   }
 
   @Override
-  public boolean hasPermission(final SimpleCommand.Invocation invocation) {
+  public boolean hasPermission(SimpleCommand.Invocation invocation) {
     return invocation.source().hasPermission("velocitytools.command.send");
   }
 }

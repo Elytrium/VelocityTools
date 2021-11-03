@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "net.elytrium"
-version = "1.0.3"
+version = "1.0.4"
 
 compileJava.options.encoding = "UTF-8"
 
@@ -34,7 +34,7 @@ repositories {
 
 dependencies {
     compileOnly files("libs/3.0.0.jar")
-    annotationProcessor "com.velocitypowered:velocity-api:3.0.2-SNAPSHOT"
+    annotationProcessor "com.velocitypowered:velocity-api:3+"
 
     implementation "org.bstats:bstats-velocity:2.2.1"
 

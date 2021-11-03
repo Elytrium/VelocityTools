@@ -43,14 +43,16 @@ public class BrandChangerListener {
 
   @Subscribe
   public void onPing(ProxyPingEvent event) {
-    ServerPing.Builder pong = event.getPing().asBuilder();
-    pong.version(
+    ServerPing.Builder builder = event.getPing().asBuilder();
+
+    builder.version(
         new ServerPing.Version(
             this.plugin.getConfig().getBoolean("tools.brandchanger.show-always") ? -1 : event.getPing().getVersion().getProtocol(),
             this.plugin.getConfig().getString("tools.brandchanger.ping-brand")
         )
     );
-    event.setPing(pong.build());
+
+    event.setPing(builder.build());
   }
 
   @Subscribe
@@ -58,8 +60,9 @@ public class BrandChangerListener {
     if (!(event.getSource() instanceof Player)) {
       return;
     }
-    ConnectedPlayer player = (ConnectedPlayer) event.getSource();
+
     if (event.getIdentifier().getId().equals("MC|Brand") || event.getIdentifier().getId().equals("minecraft:brand")) {
+      ConnectedPlayer player = (ConnectedPlayer) event.getSource();
       player.getConnection().write(
           this.rewriteMinecraftBrand(event, this.plugin.getConfig().getString("tools.brandchanger.ingame-brand"), player.getProtocolVersion())
       );
