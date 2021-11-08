@@ -22,18 +22,22 @@ import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.text.MessageFormat;
-import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.Settings;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class AlertCommand implements SimpleCommand {
 
-  private final VelocityTools plugin;
   private final ProxyServer server;
+  private final Component messageNeeded;
+  private final String prefix;
+  private final Component emptyProxy;
 
-  public AlertCommand(VelocityTools plugin, ProxyServer server) {
-    this.plugin = plugin;
+  public AlertCommand(ProxyServer server) {
     this.server = server;
+    this.messageNeeded = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.ALERT.MESSAGE_NEEDED);
+    this.prefix = Settings.IMP.COMMANDS.ALERT.PREFIX;
+    this.emptyProxy = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.ALERT.EMPTY_PROXY);
   }
 
   @Override
@@ -42,15 +46,11 @@ public class AlertCommand implements SimpleCommand {
     String[] args = invocation.arguments();
 
     if (args.length == 0) {
-      source.sendMessage(
-          LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.alert.message-needed"))
-      );
+      source.sendMessage(this.messageNeeded);
     } else {
-      Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(
-          MessageFormat.format(this.plugin.getConfig().getString("commands.alert.prefix"), String.join(" ", args))
-      );
+      Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(this.prefix, String.join(" ", args)));
       if (this.server.getAllPlayers().size() == 0) {
-        source.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.alert.empty-proxy")));
+        source.sendMessage(this.emptyProxy);
       } else if (this.server.getAllPlayers().size() >= 1) {
         if (!(source instanceof Player)) {
           source.sendMessage(component);

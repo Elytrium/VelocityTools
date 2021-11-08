@@ -17,93 +17,69 @@
 
 package net.elytrium.velocitytools.hooks;
 
-import com.velocitypowered.api.event.connection.PluginMessageEvent;
 import com.velocitypowered.api.network.ProtocolVersion;
-import com.velocitypowered.proxy.VelocityServer;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
 import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
+import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
-import com.velocitypowered.proxy.protocol.StateRegistry;
+import com.velocitypowered.proxy.protocol.ProtocolUtils;
 import com.velocitypowered.proxy.protocol.packet.PluginMessage;
 import com.velocitypowered.proxy.protocol.util.PluginMessageUtil;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.util.collection.IntObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.lang.reflect.Field;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
+import java.nio.charset.StandardCharsets;
+import java.text.MessageFormat;
 import java.util.function.Supplier;
-import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.Settings;
 
-/**
- * @author hevav
- */
-public class PluginMessageHook extends PluginMessage {
+class PluginMessageHook extends PluginMessage implements Hook {
 
-  private static Field serverConnField;
-
-  @SuppressWarnings("unchecked")
-  public static void init() {
-    try {
-      serverConnField = BackendPlaySessionHandler.class.getDeclaredField("serverConn");
-      serverConnField.setAccessible(true);
-
-      Field versionsField = StateRegistry.PacketRegistry.class.getDeclaredField("versions");
-      versionsField.setAccessible(true);
-
-      Field packetIdToSupplierField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetIdToSupplier");
-      packetIdToSupplierField.setAccessible(true);
-
-      Field packetClassToIdField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetClassToId");
-      packetClassToIdField.setAccessible(true);
-
-      Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry> versions
-          = (Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.get(StateRegistry.PLAY.clientbound);
-
-      BiConsumer<? super ProtocolVersion, ? super StateRegistry.PacketRegistry.ProtocolRegistry> consumer = (version, registry) -> {
-        try {
-          IntObjectMap<Supplier<? extends MinecraftPacket>> packetIdToSupplier
-              = (IntObjectMap<Supplier<? extends MinecraftPacket>>) packetIdToSupplierField.get(registry);
-
-          Object2IntMap<Class<? extends MinecraftPacket>> packetClassToId
-              = (Object2IntMap<Class<? extends MinecraftPacket>>) packetClassToIdField.get(registry);
-
-          int id = packetClassToId.getInt(PluginMessage.class);
-          packetClassToId.put(PluginMessageHook.class, id);
-
-          packetIdToSupplier.remove(id);
-          packetIdToSupplier.put(id, PluginMessageHook::new);
-        } catch (IllegalAccessException e) {
-          e.printStackTrace();
-        }
-      };
-
-      versions.forEach(consumer);
-    } catch (NoSuchFieldException | IllegalAccessException e) {
-      e.printStackTrace();
-    }
-  }
+  protected static Field serverConnField;
+  private final boolean enabled = Settings.IMP.TOOLS.BRAND_CHANGER.REWRITE_IN_GAME;
+  private final String ingameBrand = Settings.IMP.TOOLS.BRAND_CHANGER.INGAME_BRAND;
 
   @Override
   public boolean handle(MinecraftSessionHandler handler) {
-    if (handler instanceof BackendPlaySessionHandler && PluginMessageUtil.isMcBrand(this)) {
+    if (handler instanceof BackendPlaySessionHandler && this.enabled && PluginMessageUtil.isMcBrand(this)) {
       try {
-        VelocityServer server = (VelocityServer) VelocityTools.getInstance().getServer();
-        VelocityServerConnection srvConn = (VelocityServerConnection) serverConnField.get(handler);
-
-        byte[] copy = ByteBufUtil.getBytes(this.content());
-        if (server.getEventManager().fire(new PluginMessageEvent(srvConn.getPlayer(), srvConn, this::getChannel, copy)).get().getResult().isAllowed()) {
-          return super.handle(handler);
-        } else {
-          return true;
-        }
-      } catch (IllegalAccessException | ExecutionException | InterruptedException e) {
+        ConnectedPlayer player = ((VelocityServerConnection) serverConnField.get(handler)).getPlayer();
+        player.getConnection().write(this.rewriteMinecraftBrand(this.content(), this.getChannel(), player.getProtocolVersion()));
+        return true;
+      } catch (IllegalAccessException e) {
         e.printStackTrace();
       }
     }
 
     return super.handle(handler);
+  }
+
+  private PluginMessage rewriteMinecraftBrand(ByteBuf data, String channel, ProtocolVersion protocolVersion) {
+    String currentBrand = PluginMessageUtil.readBrandMessage(data);
+    String rewrittenBrand = MessageFormat.format(this.ingameBrand, currentBrand);
+    ByteBuf rewrittenBuf = Unpooled.buffer();
+    if (protocolVersion.compareTo(ProtocolVersion.MINECRAFT_1_8) >= 0) {
+      ProtocolUtils.writeString(rewrittenBuf, rewrittenBrand);
+    } else {
+      rewrittenBuf.writeCharSequence(rewrittenBrand, StandardCharsets.UTF_8);
+    }
+
+    return new PluginMessage(channel, rewrittenBuf);
+  }
+
+  @Override
+  public Supplier<MinecraftPacket> getHook() {
+    return PluginMessageHook::new;
+  }
+
+  @Override
+  public Class<? extends MinecraftPacket> getType() {
+    return PluginMessage.class;
+  }
+
+  @Override
+  public Class<? extends MinecraftPacket> getHookClass() {
+    return this.getClass();
   }
 }

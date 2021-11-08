@@ -27,17 +27,20 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.Settings;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class FindCommand implements SimpleCommand {
 
-  private final VelocityTools plugin;
   private final ProxyServer server;
+  private final Component usernameNeeded;
+  private final String playerOnlineAt;
 
-  public FindCommand(VelocityTools plugin, ProxyServer server) {
-    this.plugin = plugin;
+  public FindCommand(ProxyServer server) {
     this.server = server;
+    this.usernameNeeded = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.FIND.USERNAME_NEEDED);
+    this.playerOnlineAt = Settings.IMP.COMMANDS.FIND.PLAYER_ONLINE_AT;
   }
 
   @Override
@@ -64,7 +67,7 @@ public class FindCommand implements SimpleCommand {
     String[] args = invocation.arguments();
 
     if (args.length == 0) {
-      source.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.find.username-needed")));
+      source.sendMessage(this.usernameNeeded);
     } else {
       Optional<Player> player = this.server.getPlayer(args[0]);
       if (player.isPresent()) {
@@ -73,17 +76,13 @@ public class FindCommand implements SimpleCommand {
         server.ifPresent(srv ->
             source.sendMessage(
                 LegacyComponentSerializer.legacyAmpersand().deserialize(
-                    MessageFormat.format(
-                        this.plugin.getConfig().getString("commands.find.player-online-at"), player0.getUsername(), srv.getServerInfo().getName()
-                    )
+                    MessageFormat.format(this.playerOnlineAt, player0.getUsername(), srv.getServerInfo().getName())
                 )
             )
         );
       } else {
         source.sendMessage(
-            LegacyComponentSerializer.legacyAmpersand().deserialize(
-                MessageFormat.format(this.plugin.getConfig().getString("commands.find.player-not-online"), args[0])
-            )
+            LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(Settings.IMP.COMMANDS.FIND.PLAYER_NOT_ONLINE, args[0]))
         );
       }
     }

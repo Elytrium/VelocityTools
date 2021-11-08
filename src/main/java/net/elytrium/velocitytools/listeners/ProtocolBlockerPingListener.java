@@ -22,29 +22,25 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import java.util.List;
-import java.util.stream.Collectors;
-import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.utils.WhitelistUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class ProtocolBlockerPingListener {
 
-  private final List<Integer> protocols;
   private final boolean whitelist;
+  private final List<Integer> protocols;
+  private final String brand;
   private final String motd;
   private final Component motdComponent;
-  private final String brand;
 
-  public ProtocolBlockerPingListener(VelocityTools plugin) {
-    this.protocols = plugin.getConfig().getList("tools.protocolblocker.protocols")
-        .stream()
-        .map(object -> Integer.parseInt((String) object))
-        .collect(Collectors.toList());
-    this.whitelist = plugin.getConfig().getBoolean("tools.protocolblocker.whitelist");
-    this.motd = plugin.getConfig().getString("tools.protocolblocker.motd");
+  public ProtocolBlockerPingListener() {
+    this.whitelist = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.WHITELIST;
+    this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
+    this.brand = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.BRAND;
+    this.motd = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.MOTD;
     this.motdComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.motd);
-    this.brand = plugin.getConfig().getString("tools.protocolblocker.brand");
   }
 
   @Subscribe(order = PostOrder.LAST)

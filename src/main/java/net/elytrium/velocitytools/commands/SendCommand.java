@@ -29,18 +29,26 @@ import java.text.MessageFormat;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.Settings;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class SendCommand implements SimpleCommand {
 
-  private final VelocityTools plugin;
   private final ProxyServer server;
+  private final Component notEnoughArguments;
+  private final String youGotSummoned;
+  private final String console;
+  private final String playerNotOnline;
+  private final String callback;
 
-  public SendCommand(VelocityTools plugin, ProxyServer server) {
-    this.plugin = plugin;
+  public SendCommand(ProxyServer server) {
     this.server = server;
+    this.notEnoughArguments = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.SEND.NOT_ENOUGH_ARGUMENTS);
+    this.youGotSummoned = Settings.IMP.COMMANDS.SEND.YOU_GOT_SUMMONED;
+    this.console = Settings.IMP.COMMANDS.SEND.CONSOLE;
+    this.playerNotOnline = Settings.IMP.COMMANDS.SEND.PLAYER_NOT_ONLINE;
+    this.callback = Settings.IMP.COMMANDS.SEND.CALLBACK;
   }
 
   @Override
@@ -85,9 +93,7 @@ public class SendCommand implements SimpleCommand {
     String[] args = invocation.arguments();
 
     if (args.length != 2) {
-      source.sendMessage(
-          LegacyComponentSerializer.legacyAmpersand().deserialize(this.plugin.getConfig().getString("commands.send.not-enough-arguments"))
-      );
+      source.sendMessage(this.notEnoughArguments);
       return;
     }
 
@@ -99,8 +105,8 @@ public class SendCommand implements SimpleCommand {
 
     Component summoned = LegacyComponentSerializer.legacyAmpersand().deserialize(
         MessageFormat.format(
-            this.plugin.getConfig().getString("commands.send.you-got-summoned"), target.getServerInfo().getName(),
-            ((source instanceof Player) ? ((Player) source).getUsername() : this.plugin.getConfig().getString("commands.send.console"))
+            this.youGotSummoned, target.getServerInfo().getName(),
+            ((source instanceof Player) ? ((Player) source).getUsername() : this.console)
         )
     );
 
@@ -114,7 +120,8 @@ public class SendCommand implements SimpleCommand {
                   if (isSuccessful) {
                     p.sendMessage(summoned);
                   }
-                }));
+                })
+        );
         break;
       }
       case "current": {
@@ -131,7 +138,9 @@ public class SendCommand implements SimpleCommand {
                       if (isSuccessful) {
                         p.sendMessage(summoned);
                       }
-                    })));
+                    })
+            )
+        );
         break;
       }
       default: {
@@ -144,7 +153,8 @@ public class SendCommand implements SimpleCommand {
                     if (isSuccessful) {
                       p.sendMessage(summoned);
                     }
-                  }));
+                  })
+          );
         } else {
           Player player = this.server.getPlayer(args[0]).orElse(null);
           if (player != null) {
@@ -156,11 +166,7 @@ public class SendCommand implements SimpleCommand {
                   }
                 });
           } else {
-            source.sendMessage(
-                LegacyComponentSerializer.legacyAmpersand().deserialize(
-                    MessageFormat.format(this.plugin.getConfig().getString("commands.send.player-not-online"), args[0])
-                )
-            );
+            source.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(this.playerNotOnline, args[0])));
           }
         }
         break;
@@ -168,9 +174,7 @@ public class SendCommand implements SimpleCommand {
     }
 
     source.sendMessage(
-        LegacyComponentSerializer.legacyAmpersand().deserialize(
-            MessageFormat.format(this.plugin.getConfig().getString("commands.send.callback"), sentPlayers.get(), target.getServerInfo().getName())
-        )
+        LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(this.callback, sentPlayers, target.getServerInfo().getName()))
     );
   }
 
