@@ -18,36 +18,26 @@
 package net.elytrium.velocitytools;
 
 import com.google.inject.Inject;
-import com.moandjiezana.toml.Toml;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.URLConnection;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 import net.elytrium.velocitytools.commands.AlertCommand;
 import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
 import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
-import net.elytrium.velocitytools.hooks.PluginMessageHook;
-import net.elytrium.velocitytools.listeners.BrandChangerListener;
-import net.elytrium.velocitytools.listeners.HostnamesManagerJoinListener;
-import net.elytrium.velocitytools.listeners.HostnamesManagerPingListener;
+import net.elytrium.velocitytools.hooks.Hook;
+import net.elytrium.velocitytools.hooks.HooksInitializer;
+import net.elytrium.velocitytools.listeners.BrandChangerPingListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerPingListener;
+import net.elytrium.velocitytools.utils.UpdatesChecker;
 import org.bstats.velocity.Metrics;
 import org.slf4j.Logger;
 
@@ -66,8 +56,7 @@ public class VelocityTools {
   private final Path dataDirectory;
   private final Logger logger;
   private final Metrics.Factory metricsFactory;
-
-  private Toml config;
+  private final List<Hook> hooks = new ArrayList<>();
 
   @Inject
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
@@ -79,61 +68,53 @@ public class VelocityTools {
     this.metricsFactory = metricsFactory;
   }
 
-  private static void setInstance(VelocityTools thisInst) {
-    instance = thisInst;
-  }
-
   @Subscribe
   public void onProxyInitialization(ProxyInitializeEvent event) {
     this.reload();
 
-    PluginMessageHook.init();
+    HooksInitializer.init(this.hooks);
 
-    this.checkForUpdates();
+    UpdatesChecker.checkForUpdates(
+        this.getLogger(),
+        Settings.IMP.VERSION,
+        "https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION",
+        "VelocityTools",
+        "https://github.com/Elytrium/VelocityTools/releases/"
+    );
     this.metricsFactory.make(this, 12708);
+  }
+
+  private static void setInstance(VelocityTools thisInst) {
+    instance = thisInst;
   }
 
   public static VelocityTools getInstance() {
     return instance;
   }
 
-  @SuppressWarnings("ResultOfMethodCallIgnored")
-  @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
   public void reload() {
-    try {
-      if (!this.dataDirectory.toFile().exists()) {
-        this.dataDirectory.toFile().mkdir();
-      }
-
-      File configFile = new File(this.dataDirectory.toFile(), "config.toml");
-      if (!configFile.exists()) {
-        Files.copy(Objects.requireNonNull(VelocityTools.class.getResourceAsStream("/config.toml")), configFile.toPath());
-      }
-      this.config = new Toml().read(new File(this.dataDirectory.toFile(), "config.toml"));
-    } catch (IOException e) {
-      this.logger.error("Unable to load configuration!", e);
-    }
+    Settings.IMP.reload(new File(this.dataDirectory.toFile().getAbsoluteFile(), "config.yml"));
 
     // Commands /////////////////////////
-    List<String> aliases = this.config.getList("commands.hub.aliases");
+    List<String> aliases = Settings.IMP.COMMANDS.HUB.ALIASES;
     aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
-    if (this.config.getBoolean("commands.hub.enabled") && !this.config.getList("commands.hub.aliases").isEmpty()) {
-      this.server.getCommandManager().register(aliases.get(0), new HubCommand(this, this.server), aliases.toArray(new String[0]));
+    if (Settings.IMP.COMMANDS.HUB.ENABLED && !Settings.IMP.COMMANDS.HUB.ALIASES.isEmpty()) {
+      this.server.getCommandManager().register(aliases.get(0), new HubCommand(this.server), aliases.toArray(new String[0]));
     }
 
-    if (this.config.getBoolean("commands.alert.enabled")) {
+    if (Settings.IMP.COMMANDS.ALERT.ENABLED) {
       this.server.getCommandManager().unregister("alert");
-      this.server.getCommandManager().register("alert", new AlertCommand(this, this.server));
+      this.server.getCommandManager().register("alert", new AlertCommand(this.server));
     }
 
-    if (this.config.getBoolean("commands.find.enabled")) {
+    if (Settings.IMP.COMMANDS.FIND.ENABLED) {
       this.server.getCommandManager().unregister("find");
-      this.server.getCommandManager().register("find", new FindCommand(this, this.server));
+      this.server.getCommandManager().register("find", new FindCommand(this.server));
     }
 
-    if (this.config.getBoolean("commands.send.enabled")) {
+    if (Settings.IMP.COMMANDS.SEND.ENABLED) {
       this.server.getCommandManager().unregister("send");
-      this.server.getCommandManager().register("send", new SendCommand(this, this.server));
+      this.server.getCommandManager().register("send", new SendCommand(this.server));
     }
 
     this.server.getCommandManager().unregister("velocitytools");
@@ -143,58 +124,18 @@ public class VelocityTools {
     // Tools /////////////////////////
     this.server.getEventManager().unregisterListeners(this);
 
-    if (this.config.getBoolean("tools.brandchanger.enabled")) {
-      this.server.getEventManager().register(this, new BrandChangerListener(this));
+    if (Settings.IMP.TOOLS.BRAND_CHANGER.REWRITE_IN_PING) {
+      this.server.getEventManager().register(this, new BrandChangerPingListener());
     }
 
-    if (this.config.getBoolean("tools.protocolblocker.block-ping")) {
-      this.server.getEventManager().register(this, new ProtocolBlockerPingListener(this));
+    if (Settings.IMP.TOOLS.PROTOCOL_BLOCKER.BLOCK_PING) {
+      this.server.getEventManager().register(this, new ProtocolBlockerPingListener());
     }
 
-    if (this.config.getBoolean("tools.protocolblocker.block-joining")) {
-      this.server.getEventManager().register(this, new ProtocolBlockerJoinListener(this));
-    }
-
-    if (this.config.getBoolean("tools.hostnamesmanager.block-ping")) {
-      this.server.getEventManager().register(this, new HostnamesManagerPingListener(this));
-    }
-
-    if (this.config.getBoolean("tools.hostnamesmanager.block-joining")) {
-      this.server.getEventManager().register(this, new HostnamesManagerJoinListener(this));
+    if (Settings.IMP.TOOLS.PROTOCOL_BLOCKER.BLOCK_JOIN) {
+      this.server.getEventManager().register(this, new ProtocolBlockerJoinListener());
     }
     ///////////////////////////////////
-  }
-
-  @SuppressWarnings({"ConstantConditions", "MismatchedStringCase"})
-  private void checkForUpdates() {
-    if (!BuildConstants.VERSION.contains("-DEV")) {
-      try {
-        URL url = new URL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION");
-        URLConnection conn = url.openConnection();
-        int timeout = (int) TimeUnit.SECONDS.toMillis(4);
-        conn.setConnectTimeout(timeout);
-        conn.setReadTimeout(timeout);
-        try (BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-          String version = in.readLine();
-          if (version != null && !version.trim().equalsIgnoreCase(BuildConstants.VERSION)) {
-            this.logger.error("****************************************");
-            this.logger.warn("The new VelocityTools update was found, please update.");
-            this.logger.error("https://github.com/Elytrium/VelocityTools/releases/");
-            this.logger.error("****************************************");
-          }
-        }
-      } catch (IOException ex) {
-        this.logger.warn("Unable to check for updates.", ex);
-      }
-    }
-  }
-
-  public Toml getConfig() {
-    return this.config;
-  }
-
-  public ProxyServer getServer() {
-    return this.server;
   }
 
   public Logger getLogger() {

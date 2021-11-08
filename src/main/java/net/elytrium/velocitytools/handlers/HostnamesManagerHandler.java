@@ -17,41 +17,72 @@
 
 package net.elytrium.velocitytools.handlers;
 
+import com.velocitypowered.proxy.connection.MinecraftConnection;
+import com.velocitypowered.proxy.protocol.StateRegistry;
+import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.utils.WhitelistUtil;
 
 public class HostnamesManagerHandler {
 
-  private final boolean debug;
-  private final boolean showBlockedOnly;
-  private final boolean whitelist;
+  private final boolean blockPing;
+  private final boolean blockJoin;
   private final boolean blockLocal;
+  private final boolean whitelist;
   private final List<Pattern> hostnames;
   private final List<Pattern> whitelistedIps;
+  private final boolean debug;
+  private final boolean showBlockedOnly;
 
-  public HostnamesManagerHandler(VelocityTools plugin) {
-    this.debug = plugin.getConfig().getBoolean("tools.hostnamesmanager.debug");
-    this.showBlockedOnly = plugin.getConfig().getBoolean("tools.hostnamesmanager.show-blocked-only");
-    this.whitelist = plugin.getConfig().getBoolean("tools.hostnamesmanager.whitelist");
-    this.blockLocal = plugin.getConfig().getBoolean("tools.hostnamesmanager.block-local-addresses");
-    this.hostnames = plugin.getConfig().getList("tools.hostnamesmanager.hostnames")
+  public HostnamesManagerHandler() {
+    this.blockPing = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_PING;
+    this.blockJoin = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_JOIN;
+    this.blockLocal = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_LOCAL_ADDRESSES;
+    this.whitelist = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.WHITELIST;
+    this.hostnames = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.HOSTNAMES
         .stream()
-        .map(object -> Pattern.compile("^" + object.toString().replace(".", "\\.").replace("*", ".*") + "$"))
+        .map(object -> Pattern.compile("^" + object.replace(".", "\\.").replace("*", ".*") + "$"))
         .collect(Collectors.toList());
-    this.whitelistedIps = plugin.getConfig().getList("tools.hostnamesmanager.ignored-ips")
+    this.whitelistedIps = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.IGNORED_IPS
         .stream()
-        .map(object -> Pattern.compile("^" + object.toString().replace(".", "\\.").replace("*", ".*") + "$"))
+        .map(object -> Pattern.compile("^" + object.replace(".", "\\.").replace("*", ".*") + "$"))
         .collect(Collectors.toList());
+    this.debug = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.DEBUG;
+    this.showBlockedOnly = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.SHOW_BLOCKED_ONLY;
   }
 
-  public boolean checkAddress(String addr, String remoteAddr, String log) {
-    if (WhitelistUtil.checkForWhitelist(this.whitelist,
-        (this.blockLocal && (addr.startsWith("127.") || addr.equalsIgnoreCase("localhost")))
-        || this.hostnames.stream().anyMatch(pattern -> pattern.matcher(addr).matches())
-    ) && this.whitelistedIps.stream().noneMatch(pattern -> pattern.matcher(remoteAddr).matches())) {
+  public boolean checkAddress(StateRegistry type, MinecraftConnection connection, String serverAddress) {
+    InetSocketAddress remoteAddress = (InetSocketAddress) connection.getRemoteAddress();
+    String log;
+    switch (type) {
+      case STATUS: {
+        if (this.blockPing) {
+          log = remoteAddress + " is pinging the server using: " + serverAddress;
+        } else {
+          return false;
+        }
+        break;
+      }
+      case LOGIN: {
+        if (this.blockJoin) {
+          log = remoteAddress + " is joining the server using: " + serverAddress;
+        } else {
+          return false;
+        }
+        break;
+      }
+      default: {
+        throw new IllegalStateException("Unexpected value: " + type);
+      }
+    }
+
+    if ((this.blockLocal && (serverAddress.startsWith("127.") || serverAddress.equalsIgnoreCase("localhost")))
+        || (WhitelistUtil.checkForWhitelist(this.whitelist, this.hostnames.stream().anyMatch(pattern -> pattern.matcher(serverAddress).matches()))
+        && this.whitelistedIps.stream().noneMatch(pattern -> pattern.matcher(remoteAddress.getAddress().getHostAddress()).matches()))) {
       this.debugInfo(log + " §c(blocked)", true);
       return true;
     } else {

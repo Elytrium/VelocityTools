@@ -21,8 +21,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
 import java.util.List;
-import java.util.stream.Collectors;
-import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.hooks.InitialInboundConnectionHook;
 import net.elytrium.velocitytools.utils.WhitelistUtil;
 import net.kyori.adventure.text.Component;
@@ -30,17 +29,14 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class ProtocolBlockerJoinListener {
 
-  private final List<Integer> protocols;
   private final boolean whitelist;
+  private final List<Integer> protocols;
   private final Component kickReason;
 
-  public ProtocolBlockerJoinListener(VelocityTools plugin) {
-    this.protocols = plugin.getConfig().getList("tools.protocolblocker.protocols")
-        .stream()
-        .map(object -> Integer.parseInt(object.toString()))
-        .collect(Collectors.toList());
-    this.whitelist = plugin.getConfig().getBoolean("tools.protocolblocker.whitelist");
-    this.kickReason = LegacyComponentSerializer.legacyAmpersand().deserialize(plugin.getConfig().getString("tools.protocolblocker.kick-reason"));
+  public ProtocolBlockerJoinListener() {
+    this.whitelist = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.WHITELIST;
+    this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
+    this.kickReason = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.TOOLS.PROTOCOL_BLOCKER.KICK_REASON);
   }
 
   @Subscribe
