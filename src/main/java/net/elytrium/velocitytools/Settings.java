@@ -103,6 +103,12 @@ public class Settings extends Config {
 
   public static class TOOLS {
 
+    @Comment({
+        "!!!DOESN'T WORK NOW!!!",
+        "Hides the message \"com.velocitypowered.proxy.connection.client.HandshakeSessionHandler$LegacyInboundConnection@xxxxxxxx is pinging the server with version Legacy\""
+    })
+    public boolean DISABLE_LEGACY_PING = true;
+
     @Create
     public PROTOCOL_BLOCKER PROTOCOL_BLOCKER;
     @Create

@@ -20,8 +20,11 @@ package net.elytrium.velocitytools.listeners;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
 import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
+import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
+import java.lang.reflect.Field;
 import java.util.List;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.hooks.InitialInboundConnectionHook;
 import net.elytrium.velocitytools.utils.WhitelistUtil;
 import net.kyori.adventure.text.Component;
@@ -42,14 +45,21 @@ public class ProtocolBlockerJoinListener {
   @Subscribe
   public void onJoin(PreLoginEvent event) {
     try {
-      InitialInboundConnection inboundConnection = (InitialInboundConnection) event.getConnection();
+      InitialInboundConnection inboundConnection;
+      if (VelocityTools.getInstance().isVelocityOld()) {
+        inboundConnection = (InitialInboundConnection) event.getConnection();
+      } else {
+        Field delegate = LoginInboundConnection.class.getDeclaredField("delegate");
+        delegate.setAccessible(true);
+        inboundConnection = (InitialInboundConnection) delegate.get(event.getConnection());
+      }
 
       InitialInboundConnectionHook.get(inboundConnection).eventLoop().execute(() -> {
         if (WhitelistUtil.checkForWhitelist(this.whitelist, this.protocols.contains(event.getConnection().getProtocolVersion().getProtocol()))) {
           event.getConnection().getVirtualHost().ifPresent(conn -> inboundConnection.disconnect(this.kickReason));
         }
       });
-    } catch (IllegalAccessException e) {
+    } catch (IllegalAccessException | NoSuchFieldException e) {
       e.printStackTrace();
     }
   }

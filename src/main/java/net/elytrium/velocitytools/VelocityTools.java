@@ -25,14 +25,12 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.io.File;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import net.elytrium.velocitytools.commands.AlertCommand;
 import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
 import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
-import net.elytrium.velocitytools.hooks.Hook;
 import net.elytrium.velocitytools.hooks.HooksInitializer;
 import net.elytrium.velocitytools.listeners.BrandChangerPingListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
@@ -52,15 +50,24 @@ public class VelocityTools {
 
   private static VelocityTools instance;
 
+  private boolean isVelocityOld;
+
   private final ProxyServer server;
   private final Path dataDirectory;
   private final Logger logger;
   private final Metrics.Factory metricsFactory;
-  private final List<Hook> hooks = new ArrayList<>();
 
   @Inject
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
     setInstance(this);
+
+    // TODO: Remove after velocity release.
+    try {
+      Class.forName("com.velocitypowered.proxy.connection.client.LoginInboundConnection");
+      this.isVelocityOld = false;
+    } catch (ClassNotFoundException e) {
+      this.isVelocityOld = true;
+    }
 
     this.server = server;
     this.dataDirectory = dataDirectory;
@@ -72,7 +79,7 @@ public class VelocityTools {
   public void onProxyInitialization(ProxyInitializeEvent event) {
     this.reload();
 
-    HooksInitializer.init(this.hooks);
+    HooksInitializer.init();
 
     UpdatesChecker.checkForUpdates(
         this.getLogger(),
@@ -140,5 +147,9 @@ public class VelocityTools {
 
   public Logger getLogger() {
     return this.logger;
+  }
+
+  public boolean isVelocityOld() {
+    return this.isVelocityOld;
   }
 }
