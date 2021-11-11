@@ -21,12 +21,14 @@ import com.velocitypowered.api.proxy.InboundConnection;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
 import java.lang.reflect.Field;
+import net.elytrium.velocitytools.VelocityTools;
 
+// TODO: Remove class after velocity release.
 public class InitialInboundConnectionHook {
 
   private static Field mcConnectionField;
 
-  static {
+  private static void init() {
     try {
       mcConnectionField = InitialInboundConnection.class.getDeclaredField("connection");
       mcConnectionField.setAccessible(true);
@@ -36,6 +38,14 @@ public class InitialInboundConnectionHook {
   }
 
   public static MinecraftConnection get(InboundConnection connection) throws IllegalAccessException {
-    return (MinecraftConnection) mcConnectionField.get(connection);
+    if (VelocityTools.getInstance().isVelocityOld()) {
+      return (MinecraftConnection) mcConnectionField.get(connection);
+    } else {
+      return ((InitialInboundConnection) connection).getConnection();
+    }
+  }
+
+  static {
+    init();
   }
 }

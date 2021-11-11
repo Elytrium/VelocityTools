@@ -45,7 +45,7 @@ class PluginMessageHook extends PluginMessage implements Hook {
     if (handler instanceof BackendPlaySessionHandler && this.enabled && PluginMessageUtil.isMcBrand(this)) {
       try {
         ConnectedPlayer player = ((VelocityServerConnection) serverConnField.get(handler)).getPlayer();
-        player.getConnection().write(this.rewriteMinecraftBrand(this.content(), this.getChannel(), player.getProtocolVersion()));
+        player.getConnection().write(this.rewriteMinecraftBrand(this, player.getProtocolVersion()));
         return true;
       } catch (IllegalAccessException e) {
         e.printStackTrace();
@@ -55,8 +55,8 @@ class PluginMessageHook extends PluginMessage implements Hook {
     return super.handle(handler);
   }
 
-  private PluginMessage rewriteMinecraftBrand(ByteBuf data, String channel, ProtocolVersion protocolVersion) {
-    String currentBrand = PluginMessageUtil.readBrandMessage(data);
+  private PluginMessage rewriteMinecraftBrand(PluginMessage message, ProtocolVersion protocolVersion) {
+    String currentBrand = PluginMessageUtil.readBrandMessage(message.content());
     String rewrittenBrand = MessageFormat.format(this.ingameBrand, currentBrand);
     ByteBuf rewrittenBuf = Unpooled.buffer();
     if (protocolVersion.compareTo(ProtocolVersion.MINECRAFT_1_8) >= 0) {
@@ -65,7 +65,7 @@ class PluginMessageHook extends PluginMessage implements Hook {
       rewrittenBuf.writeCharSequence(rewrittenBrand, StandardCharsets.UTF_8);
     }
 
-    return new PluginMessage(channel, rewrittenBuf);
+    return new PluginMessage(message.getChannel(), rewrittenBuf);
   }
 
   @Override

@@ -26,6 +26,8 @@ import com.velocitypowered.proxy.protocol.StateRegistry;
 import com.velocitypowered.proxy.protocol.packet.Disconnect;
 import com.velocitypowered.proxy.protocol.packet.Handshake;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.function.Supplier;
 import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
@@ -35,20 +37,31 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 class HandshakeHook extends Handshake implements Hook {
 
   private final HostnamesManagerHandler handler = new HostnamesManagerHandler();
+  private final boolean disableLegacyPing = Settings.IMP.TOOLS.DISABLE_LEGACY_PING;
   private final String kickReason = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.KICK_REASON;
   private final Component kickReasonComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.kickReason);
 
   @Override
   public boolean handle(MinecraftSessionHandler handler) {
-    int nextStatus = this.getNextStatus();
-    String serverAddress = this.getServerAddress();
-
     try {
+      int nextStatus = this.getNextStatus();
+
+      Method cleanVhost = HandshakeSessionHandler.class.getDeclaredMethod("cleanVhost", String.class);
+      cleanVhost.setAccessible(true);
+      String serverAddress = (String) cleanVhost.invoke(handler, this.getServerAddress());
+
       Field connectionField = HandshakeSessionHandler.class.getDeclaredField("connection");
       connectionField.setAccessible(true);
       MinecraftConnection connection = (MinecraftConnection) connectionField.get(handler);
 
+      ProtocolVersion protocolVersion = this.getProtocolVersion();
+
       if (nextStatus == StateRegistry.STATUS_ID) {
+        // TODO
+        if (this.disableLegacyPing) {
+          //connection.getChannel().pipeline().remove(LEGACY_PING_DECODER);
+        }
+
         if (this.handler.checkAddress(StateRegistry.STATUS, connection, serverAddress)) {
           connection.close();
           return true;
@@ -58,7 +71,6 @@ class HandshakeHook extends Handshake implements Hook {
       if (nextStatus == StateRegistry.LOGIN_ID) {
         StateRegistry login = StateRegistry.LOGIN;
         if (this.handler.checkAddress(login, connection, serverAddress)) {
-          ProtocolVersion protocolVersion = this.getProtocolVersion();
           if (!this.kickReason.isEmpty()) {
             connection.setState(login);
             connection.setProtocolVersion(protocolVersion);
@@ -67,7 +79,7 @@ class HandshakeHook extends Handshake implements Hook {
           return true;
         }
       }
-    } catch (IllegalAccessException | NoSuchFieldException e) {
+    } catch (IllegalAccessException | NoSuchFieldException | NoSuchMethodException | InvocationTargetException e) {
       e.printStackTrace();
     }
 

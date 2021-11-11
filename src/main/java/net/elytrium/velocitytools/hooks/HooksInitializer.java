@@ -24,6 +24,7 @@ import com.velocitypowered.proxy.protocol.StateRegistry;
 import io.netty.util.collection.IntObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -35,7 +36,7 @@ import java.util.function.Supplier;
 public class HooksInitializer {
 
   @SuppressWarnings("unchecked")
-  public static void init(List<Hook> hooks) {
+  public static void init() {
     try {
       Field serverConnField = BackendPlaySessionHandler.class.getDeclaredField("serverConn");
       serverConnField.setAccessible(true);
@@ -50,6 +51,7 @@ public class HooksInitializer {
       Field packetClassToIdField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetClassToId");
       packetClassToIdField.setAccessible(true);
 
+      List<Hook> hooks = new ArrayList<>();
       hooks.add(new PluginMessageHook());
       hooks.add(new HandshakeHook());
 
