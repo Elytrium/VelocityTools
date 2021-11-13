@@ -41,7 +41,7 @@ import org.slf4j.Logger;
 
 @Plugin(
     id = "velocity_tools",
-    name = "Velocity Tools",
+    name = "VelocityTools",
     version = BuildConstants.VERSION,
     url = "https://elytrium.net",
     authors = {"mdxd44", "hevav"}
@@ -61,25 +61,26 @@ public class VelocityTools {
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
     setInstance(this);
 
+    this.server = server;
+    this.dataDirectory = dataDirectory;
+    this.logger = logger;
+    this.metricsFactory = metricsFactory;
+
     // TODO: Remove after velocity release.
     try {
       Class.forName("com.velocitypowered.proxy.connection.client.LoginInboundConnection");
       this.isVelocityOld = false;
     } catch (ClassNotFoundException e) {
       this.isVelocityOld = true;
+      //this.logger.warn("!!! Velocity 3.0.x is deprecated, please update your Velocity binary to 3.1.x as soon as possible !!!");
     }
-
-    this.server = server;
-    this.dataDirectory = dataDirectory;
-    this.logger = logger;
-    this.metricsFactory = metricsFactory;
   }
 
   @Subscribe
   public void onProxyInitialization(ProxyInitializeEvent event) {
     this.reload();
 
-    HooksInitializer.init();
+    HooksInitializer.init(this.server);
 
     UpdatesChecker.checkForUpdates(
         this.getLogger(),
@@ -89,14 +90,6 @@ public class VelocityTools {
         "https://github.com/Elytrium/VelocityTools/releases/"
     );
     this.metricsFactory.make(this, 12708);
-  }
-
-  private static void setInstance(VelocityTools thisInst) {
-    instance = thisInst;
-  }
-
-  public static VelocityTools getInstance() {
-    return instance;
   }
 
   public void reload() {
@@ -143,6 +136,14 @@ public class VelocityTools {
       this.server.getEventManager().register(this, new ProtocolBlockerJoinListener());
     }
     ///////////////////////////////////
+  }
+
+  private static void setInstance(VelocityTools instance) {
+    VelocityTools.instance = instance;
+  }
+
+  public static VelocityTools getInstance() {
+    return instance;
   }
 
   public Logger getLogger() {

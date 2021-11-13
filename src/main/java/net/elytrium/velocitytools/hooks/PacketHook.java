@@ -20,7 +20,7 @@ package net.elytrium.velocitytools.hooks;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import java.util.function.Supplier;
 
-public interface Hook {
+public interface PacketHook {
 
   Supplier<MinecraftPacket> getHook();
 

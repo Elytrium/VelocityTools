@@ -34,10 +34,9 @@ import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-class HandshakeHook extends Handshake implements Hook {
+class HandshakeHook extends Handshake implements PacketHook {
 
   private final HostnamesManagerHandler handler = new HostnamesManagerHandler();
-  private final boolean disableLegacyPing = Settings.IMP.TOOLS.DISABLE_LEGACY_PING;
   private final String kickReason = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.KICK_REASON;
   private final Component kickReasonComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.kickReason);
 
@@ -57,11 +56,6 @@ class HandshakeHook extends Handshake implements Hook {
       ProtocolVersion protocolVersion = this.getProtocolVersion();
 
       if (nextStatus == StateRegistry.STATUS_ID) {
-        // TODO
-        if (this.disableLegacyPing) {
-          //connection.getChannel().pipeline().remove(LEGACY_PING_DECODER);
-        }
-
         if (this.handler.checkAddress(StateRegistry.STATUS, connection, serverAddress)) {
           connection.close();
           return true;
@@ -75,6 +69,7 @@ class HandshakeHook extends Handshake implements Hook {
             connection.setState(login);
             connection.setProtocolVersion(protocolVersion);
           }
+
           connection.closeWith(Disconnect.create(this.kickReasonComponent, protocolVersion));
           return true;
         }
