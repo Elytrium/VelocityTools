@@ -36,6 +36,9 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 class HandshakeHook extends Handshake implements PacketHook {
 
+  private static Method cleanVhost;
+  private static Field connectionField;
+
   private final HostnamesManagerHandler handler = new HostnamesManagerHandler();
   private final String kickReason = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.KICK_REASON;
   private final Component kickReasonComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.kickReason);
@@ -44,16 +47,10 @@ class HandshakeHook extends Handshake implements PacketHook {
   public boolean handle(MinecraftSessionHandler handler) {
     try {
       int nextStatus = this.getNextStatus();
-
-      Method cleanVhost = HandshakeSessionHandler.class.getDeclaredMethod("cleanVhost", String.class);
-      cleanVhost.setAccessible(true);
-      String serverAddress = (String) cleanVhost.invoke(handler, this.getServerAddress());
-
-      Field connectionField = HandshakeSessionHandler.class.getDeclaredField("connection");
-      connectionField.setAccessible(true);
-      MinecraftConnection connection = (MinecraftConnection) connectionField.get(handler);
-
       ProtocolVersion protocolVersion = this.getProtocolVersion();
+
+      String serverAddress = (String) cleanVhost.invoke(handler, this.getServerAddress());
+      MinecraftConnection connection = (MinecraftConnection) connectionField.get(handler);
 
       if (nextStatus == StateRegistry.STATUS_ID) {
         if (this.handler.checkAddress(StateRegistry.STATUS, connection, serverAddress)) {
@@ -74,7 +71,7 @@ class HandshakeHook extends Handshake implements PacketHook {
           return true;
         }
       }
-    } catch (IllegalAccessException | NoSuchFieldException | NoSuchMethodException | InvocationTargetException e) {
+    } catch (IllegalAccessException | InvocationTargetException e) {
       e.printStackTrace();
     }
 
@@ -94,5 +91,21 @@ class HandshakeHook extends Handshake implements PacketHook {
   @Override
   public Class<? extends MinecraftPacket> getHookClass() {
     return this.getClass();
+  }
+
+  private static void init() {
+    try {
+      cleanVhost = HandshakeSessionHandler.class.getDeclaredMethod("cleanVhost", String.class);
+      cleanVhost.setAccessible(true);
+
+      connectionField = HandshakeSessionHandler.class.getDeclaredField("connection");
+      connectionField.setAccessible(true);
+    } catch (NoSuchMethodException | NoSuchFieldException e) {
+      e.printStackTrace();
+    }
+  }
+
+  static {
+    init();
   }
 }

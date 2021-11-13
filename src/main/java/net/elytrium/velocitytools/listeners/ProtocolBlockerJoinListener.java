@@ -32,11 +32,19 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class ProtocolBlockerJoinListener {
 
+  private final Field delegate;
   private final boolean whitelist;
   private final List<Integer> protocols;
   private final Component kickReason;
 
   public ProtocolBlockerJoinListener() {
+    try {
+      this.delegate = LoginInboundConnection.class.getDeclaredField("delegate");
+      this.delegate.setAccessible(true);
+    } catch (NoSuchFieldException e) {
+      throw new RuntimeException(e);
+    }
+
     this.whitelist = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.WHITELIST;
     this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
     this.kickReason = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.TOOLS.PROTOCOL_BLOCKER.KICK_REASON);
@@ -49,9 +57,7 @@ public class ProtocolBlockerJoinListener {
       if (VelocityTools.getInstance().isVelocityOld()) {
         inboundConnection = (InitialInboundConnection) event.getConnection();
       } else {
-        Field delegate = LoginInboundConnection.class.getDeclaredField("delegate");
-        delegate.setAccessible(true);
-        inboundConnection = (InitialInboundConnection) delegate.get(event.getConnection());
+        inboundConnection = (InitialInboundConnection) this.delegate.get(event.getConnection());
       }
 
       InitialInboundConnectionHook.get(inboundConnection).eventLoop().execute(() -> {
@@ -59,7 +65,7 @@ public class ProtocolBlockerJoinListener {
           event.getConnection().getVirtualHost().ifPresent(conn -> inboundConnection.disconnect(this.kickReason));
         }
       });
-    } catch (IllegalAccessException | NoSuchFieldException e) {
+    } catch (IllegalAccessException e) {
       e.printStackTrace();
     }
   }
