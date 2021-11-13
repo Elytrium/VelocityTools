@@ -18,9 +18,14 @@
 package net.elytrium.velocitytools.hooks;
 
 import com.velocitypowered.api.network.ProtocolVersion;
+import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
+import com.velocitypowered.proxy.network.ConnectionManager;
+import com.velocitypowered.proxy.network.ServerChannelInitializerHolder;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.StateRegistry;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.util.collection.IntObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.lang.reflect.Field;
@@ -36,8 +41,17 @@ import java.util.function.Supplier;
 public class HooksInitializer {
 
   @SuppressWarnings("unchecked")
-  public static void init() {
+  public static void init(ProxyServer server) {
     try {
+      Field cm = server.getClass().getDeclaredField("cm");
+      cm.setAccessible(true);
+
+      ServerChannelInitializerHolder serverChannelInitializer = ((ConnectionManager) cm.get(server)).getServerChannelInitializer();
+      Field initializerField = serverChannelInitializer.getClass().getDeclaredField("initializer");
+      initializerField.setAccessible(true);
+      ChannelInitializer<Channel> initializer = (ChannelInitializer<Channel>) initializerField.get(serverChannelInitializer);
+      initializerField.set(serverChannelInitializer, new ChannelInitializerHook(initializer));
+
       Field serverConnField = BackendPlaySessionHandler.class.getDeclaredField("serverConn");
       serverConnField.setAccessible(true);
       PluginMessageHook.serverConnField = serverConnField;
@@ -51,7 +65,7 @@ public class HooksInitializer {
       Field packetClassToIdField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetClassToId");
       packetClassToIdField.setAccessible(true);
 
-      List<Hook> hooks = new ArrayList<>();
+      List<PacketHook> hooks = new ArrayList<>();
       hooks.add(new PluginMessageHook());
       hooks.add(new HandshakeHook());
 

@@ -34,11 +34,12 @@ import java.text.MessageFormat;
 import java.util.function.Supplier;
 import net.elytrium.velocitytools.Settings;
 
-class PluginMessageHook extends PluginMessage implements Hook {
+class PluginMessageHook extends PluginMessage implements PacketHook {
 
   protected static Field serverConnField;
+
   private final boolean enabled = Settings.IMP.TOOLS.BRAND_CHANGER.REWRITE_IN_GAME;
-  private final String ingameBrand = Settings.IMP.TOOLS.BRAND_CHANGER.INGAME_BRAND;
+  private final String inGameBrand = Settings.IMP.TOOLS.BRAND_CHANGER.IN_GAME_BRAND;
 
   @Override
   public boolean handle(MinecraftSessionHandler handler) {
@@ -57,7 +58,7 @@ class PluginMessageHook extends PluginMessage implements Hook {
 
   private PluginMessage rewriteMinecraftBrand(PluginMessage message, ProtocolVersion protocolVersion) {
     String currentBrand = PluginMessageUtil.readBrandMessage(message.content());
-    String rewrittenBrand = MessageFormat.format(this.ingameBrand, currentBrand);
+    String rewrittenBrand = MessageFormat.format(this.inGameBrand, currentBrand);
     ByteBuf rewrittenBuf = Unpooled.buffer();
     if (protocolVersion.compareTo(ProtocolVersion.MINECRAFT_1_8) >= 0) {
       ProtocolUtils.writeString(rewrittenBuf, rewrittenBrand);

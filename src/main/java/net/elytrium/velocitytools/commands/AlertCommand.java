@@ -49,15 +49,14 @@ public class AlertCommand implements SimpleCommand {
       source.sendMessage(this.messageNeeded);
     } else {
       Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(this.prefix, String.join(" ", args)));
-      if (this.server.getAllPlayers().size() == 0) {
+      if (this.server.getAllPlayers().size() < 1) {
         source.sendMessage(this.emptyProxy);
-      } else if (this.server.getAllPlayers().size() >= 1) {
+      } else {
         if (!(source instanceof Player)) {
           source.sendMessage(component);
         }
-        for (Player player : this.server.getAllPlayers()) {
-          player.sendMessage(player, component);
-        }
+
+        this.server.getAllPlayers().forEach(player -> player.sendMessage(player, component));
       }
     }
   }

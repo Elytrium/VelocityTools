@@ -103,10 +103,7 @@ public class Settings extends Config {
 
   public static class TOOLS {
 
-    @Comment({
-        "!!!DOESN'T WORK NOW!!!",
-        "Hides the message \"com.velocitypowered.proxy.connection.client.HandshakeSessionHandler$LegacyInboundConnection@xxxxxxxx is pinging the server with version Legacy\""
-    })
+    @Comment("Hides the \"com.velocitypowered.proxy.connection.client.HandshakeSessionHandler$LegacyInboundConnection@xxxxxxxx is pinging the server with version Legacy\" message.")
     public boolean DISABLE_LEGACY_PING = true;
 
     @Create
@@ -140,7 +137,7 @@ public class Settings extends Config {
       @Comment("For ping.")
       public boolean SHOW_ALWAYS = false;
       @Comment("{0} - Original server brand (e.g. Paper).")
-      public String INGAME_BRAND = "YourServer ({0})";
+      public String IN_GAME_BRAND = "YourServer ({0})";
     }
 
     @Comment("Doesn't work with srv records.")
