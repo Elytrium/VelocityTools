@@ -28,20 +28,20 @@ public class InitialInboundConnectionHook {
 
   private static Field mcConnectionField;
 
+  public static MinecraftConnection get(InboundConnection connection) throws IllegalAccessException {
+    if (VelocityTools.getInstance().isVelocityOld()) {
+      return (MinecraftConnection) mcConnectionField.get(connection);
+    } else {
+      return ((InitialInboundConnection) connection).getConnection();
+    }
+  }
+
   private static void init() {
     try {
       mcConnectionField = InitialInboundConnection.class.getDeclaredField("connection");
       mcConnectionField.setAccessible(true);
     } catch (NoSuchFieldException e) {
       e.printStackTrace();
-    }
-  }
-
-  public static MinecraftConnection get(InboundConnection connection) throws IllegalAccessException {
-    if (VelocityTools.getInstance().isVelocityOld()) {
-      return (MinecraftConnection) mcConnectionField.get(connection);
-    } else {
-      return ((InitialInboundConnection) connection).getConnection();
     }
   }
 
