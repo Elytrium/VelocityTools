@@ -44,7 +44,7 @@ public class ChannelInitializerHook extends ChannelInitializer<Channel> {
   @Override
   protected void initChannel(Channel channel) throws Exception {
     this.initChannel.invoke(this.originalInitializer, channel);
-    if (Settings.IMP.TOOLS.DISABLE_LEGACY_PING) {
+    if (Settings.IMP.TOOLS.DISABLE_LEGACY_PING && channel.pipeline().names().contains(Connections.LEGACY_PING_DECODER)) {
       channel.pipeline().remove(Connections.LEGACY_PING_DECODER);
     }
   }
