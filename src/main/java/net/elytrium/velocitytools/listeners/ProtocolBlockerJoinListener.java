@@ -38,12 +38,16 @@ public class ProtocolBlockerJoinListener {
   private final Component kickReason;
 
   public ProtocolBlockerJoinListener() {
-    try {
-      this.delegate = LoginInboundConnection.class.getDeclaredField("delegate");
-      this.delegate.setAccessible(true);
-    } catch (NoSuchFieldException e) {
-      throw new RuntimeException(e);
-    }
+    if (!VelocityTools.getInstance().isVelocityOld()) {
+      try {
+        this.delegate = LoginInboundConnection.class.getDeclaredField("delegate");
+        this.delegate.setAccessible(true);
+      } catch (NoSuchFieldException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      this.delegate = null;
+	}
 
     this.whitelist = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.WHITELIST;
     this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
