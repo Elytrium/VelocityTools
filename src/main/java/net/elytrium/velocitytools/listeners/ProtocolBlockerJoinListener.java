@@ -47,7 +47,7 @@ public class ProtocolBlockerJoinListener {
       }
     } else {
       this.delegate = null;
-	}
+    }
 
     this.whitelist = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.WHITELIST;
     this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
