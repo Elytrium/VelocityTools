@@ -50,8 +50,6 @@ public class VelocityTools {
 
   private static VelocityTools instance;
 
-  private boolean isVelocityOld;
-
   private final ProxyServer server;
   private final Path dataDirectory;
   private final Logger logger;
@@ -66,13 +64,11 @@ public class VelocityTools {
     this.logger = logger;
     this.metricsFactory = metricsFactory;
 
-    // TODO: Remove after velocity release.
     try {
       Class.forName("com.velocitypowered.proxy.connection.client.LoginInboundConnection");
-      this.isVelocityOld = false;
     } catch (ClassNotFoundException e) {
-      this.isVelocityOld = true;
-      //this.logger.warn("!!! Velocity 3.0.x is deprecated, please update your Velocity binary to 3.1.x as soon as possible !!!");
+      this.getLogger().error("Please update your Velocity binary to 3.1.x", e);
+      this.server.shutdown();
     }
   }
 
@@ -148,9 +144,5 @@ public class VelocityTools {
 
   public Logger getLogger() {
     return this.logger;
-  }
-
-  public boolean isVelocityOld() {
-    return this.isVelocityOld;
   }
 }
