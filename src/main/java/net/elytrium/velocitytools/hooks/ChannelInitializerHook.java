@@ -21,6 +21,7 @@ import com.velocitypowered.proxy.network.Connections;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import java.lang.reflect.Method;
 import net.elytrium.velocitytools.Settings;
 
@@ -44,8 +45,9 @@ public class ChannelInitializerHook extends ChannelInitializer<Channel> {
   @Override
   protected void initChannel(Channel channel) throws Exception {
     this.initChannel.invoke(this.originalInitializer, channel);
-    if (Settings.IMP.TOOLS.DISABLE_LEGACY_PING && channel.pipeline().names().contains(Connections.LEGACY_PING_DECODER)) {
-      channel.pipeline().remove(Connections.LEGACY_PING_DECODER);
+    ChannelPipeline pipeline = channel.pipeline();
+    if (Settings.IMP.TOOLS.DISABLE_LEGACY_PING && pipeline.names().contains(Connections.LEGACY_PING_DECODER)) {
+      pipeline.remove(Connections.LEGACY_PING_DECODER);
     }
   }
 }
