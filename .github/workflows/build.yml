@@ -21,8 +21,6 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
-      - name: Download Velocity
-        run: ./scripts/init_libs.sh
       - name: Build
         run: ./gradlew build
       - name: Upload a build artifact

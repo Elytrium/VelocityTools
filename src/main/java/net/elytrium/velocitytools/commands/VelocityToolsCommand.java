@@ -36,15 +36,21 @@ public class VelocityToolsCommand implements SimpleCommand {
 
   @Override
   public List<String> suggest(SimpleCommand.Invocation invocation) {
+    CommandSource source = invocation.source();
     String[] args = invocation.arguments();
 
     if (args.length == 0) {
-      return Stream.of("reload").collect(Collectors.toList());
+      return this.getSubCommands()
+          .filter(cmd -> source.hasPermission("velocitytools.admin." + cmd))
+          .collect(Collectors.toList());
     } else if (args.length == 1) {
-      return Stream.of("reload").filter(str -> str.regionMatches(true, 0, args[0], 0, args[0].length())).collect(Collectors.toList());
-    } else {
-      return ImmutableList.of();
+      return this.getSubCommands()
+          .filter(cmd -> source.hasPermission("velocitytools.admin." + cmd))
+          .filter(str -> str.regionMatches(true, 0, args[0], 0, args[0].length()))
+          .collect(Collectors.toList());
     }
+
+    return ImmutableList.of();
   }
 
   @Override
@@ -52,31 +58,40 @@ public class VelocityToolsCommand implements SimpleCommand {
     CommandSource source = invocation.source();
     String[] args = invocation.arguments();
 
-    if (args.length == 0) {
-      this.showHelp(source);
-    } else if (args.length == 1) {
-      if (args[0].equalsIgnoreCase("reload") && source.hasPermission("velocitytools.command.reload")) {
+    if (args.length == 1) {
+      if (args[0].equalsIgnoreCase("reload") && source.hasPermission("velocitytools.admin.reload")) {
         try {
           this.plugin.reload();
           source.sendMessage(Component.text("§aСonfig reloaded successfully!"));
         } catch (Exception e) {
-          e.printStackTrace();
           source.sendMessage(Component.text("§cAn internal error has occurred!"));
+          e.printStackTrace();
         }
-      } else {
-        this.showHelp(source);
       }
+
+      return;
     }
+
+    this.showHelp(source);
   }
 
   private void showHelp(CommandSource source) {
     source.sendMessage(Component.text("§eThis server is using VelocityTools"));
     source.sendMessage(Component.text("§e(c) 2021 Elytrium"));
     source.sendMessage(Component.text("§ahttps://ely.su/github/"));
-    if (source.hasPermission("velocitytools.command.reload")) {
-      source.sendMessage(Component.text("§r"));
-      source.sendMessage(Component.text("§fSubcommands:"));
-      source.sendMessage(Component.text("    §a/vtools reload §8- §eReload config"));
-    }
+    source.sendMessage(Component.text("§r"));
+    source.sendMessage(Component.text("§fAvailable subcommands:"));
+    // Java moment
+    this.getSubCommands()
+        .filter(cmd -> source.hasPermission("limboauth.admin." + cmd))
+        .forEach(cmd -> {
+          if (cmd.equals("reload")) {
+            source.sendMessage(Component.text("    §a/velocitytools reload §8- §eReload config"));
+          }
+        });
+  }
+
+  private Stream<String> getSubCommands() {
+    return Stream.of("reload");
   }
 }
