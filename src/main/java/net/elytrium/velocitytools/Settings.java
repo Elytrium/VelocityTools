@@ -41,6 +41,8 @@ public class Settings extends Config {
       "  │",
       "  └── Commands:",
       "      │",
+      "      ├── /velocitytools reload",
+      "      │   └── velocitytools.admin.reload",
       "      ├── /alert",
       "      │   └── velocitytools.command.alert",
       "      ├── /find",
