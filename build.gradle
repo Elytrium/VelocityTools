@@ -38,8 +38,8 @@ dependencies {
     compileOnly("com.velocitypowered:velocity-proxy:3.1.0") // From Elytrium Repo
 
     // Needs for some velocity methods
-    implementation("io.netty:netty-codec:4.1.70.Final")
-    implementation("it.unimi.dsi:fastutil-core:8.5.6")
+    compileOnly("io.netty:netty-codec:4.1.70.Final")
+    compileOnly("it.unimi.dsi:fastutil-core:8.5.6")
 
     implementation("org.bstats:bstats-velocity:2.2.1")
 
