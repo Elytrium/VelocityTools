@@ -200,7 +200,7 @@ public class Config {
     }
   }
 
-  private void save(PrintWriter writer, Class<?> clazz, final Object instance, int indent) {
+  private void save(PrintWriter writer, Class<?> clazz, Object instance, int indent) {
     try {
       String lineSeparator = System.lineSeparator();
       String spacing = this.repeat(" ", indent);
@@ -348,9 +348,14 @@ public class Config {
   private void setAccessible(Field field) throws NoSuchFieldException, IllegalAccessException {
     field.setAccessible(true);
     if (Modifier.isFinal(field.getModifiers())) {
-      Field modifiersField = Field.class.getDeclaredField("modifiers");
-      modifiersField.setAccessible(true);
-      modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+      if (Runtime.version().feature() < 12) {
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
+      } else {
+        // TODO: Maybe use sun.misc.Unsafe?...
+        throw new UnsupportedOperationException();
+      }
     }
   }
 
@@ -369,7 +374,7 @@ public class Config {
         return array[0].toString();
       }
       default: {
-        final StringBuilder result = new StringBuilder();
+        StringBuilder result = new StringBuilder();
         for (int i = 0, j = array.length; i < j; i++) {
           if (i > 0) {
             result.append(delimiter);

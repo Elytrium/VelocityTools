@@ -107,6 +107,8 @@ public class Settings extends Config {
 
     @Comment("Hides the Legacy Ping message.")
     public boolean DISABLE_LEGACY_PING = true;
+    @Comment("Hides the \"... provided invalid protocol ...\" message. Helps with some types of attacks (https://media.discordapp.net/attachments/868930650537857024/921383075454259300/unknown.png).")
+    public boolean DISABLE_INVALID_PROTOCOL = true;
 
     @Create
     public PROTOCOL_BLOCKER PROTOCOL_BLOCKER;
@@ -121,6 +123,7 @@ public class Settings extends Config {
       public boolean BLOCK_PING = false;
       @Comment("If true, all protocols except those listed below will be blocked.")
       public boolean WHITELIST = false;
+      // TODO: Ну либо какой то сайт чтобы генерировать либо что то типа того
       @Comment("You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers")
       public List<Integer> PROTOCOLS = List.of(9999, 9998);
       @Comment("For \"block-ping\" option.")
