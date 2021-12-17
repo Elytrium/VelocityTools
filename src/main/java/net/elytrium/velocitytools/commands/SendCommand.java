@@ -27,6 +27,7 @@ import com.velocitypowered.api.proxy.server.ServerInfo;
 import com.velocitypowered.proxy.command.builtin.CommandMessages;
 import java.text.MessageFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.Settings;
@@ -111,7 +112,7 @@ public class SendCommand implements SimpleCommand {
     );
 
     AtomicInteger sentPlayers = new AtomicInteger();
-    switch (args[0].toLowerCase()) {
+    switch (args[0].toLowerCase(Locale.ROOT)) {
       case "all": {
         this.server.getAllPlayers().forEach(p ->
             p.createConnectionRequest(target).connectWithIndication()

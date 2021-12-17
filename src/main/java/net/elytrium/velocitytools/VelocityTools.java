@@ -78,13 +78,7 @@ public class VelocityTools {
 
     HooksInitializer.init(this.server);
 
-    UpdatesChecker.checkForUpdates(
-        this.getLogger(),
-        Settings.IMP.VERSION,
-        "https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION",
-        "VelocityTools",
-        "https://github.com/Elytrium/VelocityTools/releases/"
-    );
+    UpdatesChecker.checkForUpdates(this.getLogger());
     this.metricsFactory.make(this, 12708);
   }
 

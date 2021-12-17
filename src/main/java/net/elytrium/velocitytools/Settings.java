@@ -105,7 +105,7 @@ public class Settings extends Config {
 
   public static class TOOLS {
 
-    @Comment("Hides the \"com.velocitypowered.proxy.connection.client.HandshakeSessionHandler$LegacyInboundConnection@xxxxxxxx is pinging the server with version Legacy\" message.")
+    @Comment("Hides the Legacy Ping message.")
     public boolean DISABLE_LEGACY_PING = true;
 
     @Create
@@ -156,6 +156,8 @@ public class Settings extends Config {
       public boolean WHITELIST = true;
       @Comment("IP Addresses starting with \"127.\" or equal to \"localhost\" will be blocked.")
       public boolean BLOCK_LOCAL_ADDRESSES = true;
+      @Comment("DoMaIn.net will be similar to domain.net.")
+      public boolean IGNORE_CASE = true;
       public List<String> HOSTNAMES = List.of("your-domain.net", "your-domain.com");
       @Comment("List of IP addresses that will bypass this check.")
       public List<String> IGNORED_IPS = List.of("79.555.*", "228.1337.*");

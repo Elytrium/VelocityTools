@@ -3,32 +3,35 @@
 import com.github.spotbugs.snom.SpotBugsTask
 
 plugins {
-    id "java"
-    id "checkstyle"
-    id "com.github.spotbugs" version "4.7.9"
-    id "org.cadixdev.licenser" version "0.6.1"
-    id "com.github.johnrengelman.shadow" version "7.0.0"
+    id("java")
+    id("checkstyle")
+    id("com.github.spotbugs").version("5.0.3")
+    id("org.cadixdev.licenser").version("0.6.1")
+    id("com.github.johnrengelman.shadow").version("7.0.0")
 }
 
-group = "net.elytrium"
-version = "1.1.6-SNAPSHOT"
+setGroup("net.elytrium")
+setVersion("1.1.6-SNAPSHOT")
 
-compileJava.options.encoding = "UTF-8"
+compileJava {
+    getOptions().setEncoding("UTF-8")
+}
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+    setSourceCompatibility(JavaVersion.VERSION_11)
+    setTargetCompatibility(JavaVersion.VERSION_11)
 }
 
 repositories {
     mavenCentral()
+
     maven {
-        name = "velocitypowered-repo"
-        url = "https://nexus.velocitypowered.com/repository/maven-public/"
+        setName("velocitypowered-repo")
+        setUrl("https://nexus.velocitypowered.com/repository/maven-public/")
     }
     maven {
-        name = "elytrium-repo"
-        url = "https://maven.elytrium.net/repo/"
+        setName("elytrium-repo")
+        setUrl("https://maven.elytrium.net/repo/")
     }
 }
 
@@ -38,12 +41,12 @@ dependencies {
     compileOnly("com.velocitypowered:velocity-proxy:3.1.0") // From Elytrium Repo
 
     // Needs for some velocity methods
-    compileOnly("io.netty:netty-codec:4.1.70.Final")
+    compileOnly("io.netty:netty-codec:4.1.72.Final")
     compileOnly("it.unimi.dsi:fastutil-core:8.5.6")
 
     implementation("org.bstats:bstats-velocity:2.2.1")
 
-    compileOnly("com.github.spotbugs:spotbugs-annotations:4.5.0")
+    compileOnly("com.github.spotbugs:spotbugs-annotations:4.5.2")
 }
 
 shadowJar {
@@ -55,37 +58,37 @@ shadowJar {
 }
 
 license {
-    header = project.rootProject.file("HEADER.txt")
+    setHeader(file("HEADER.txt"))
 }
 
 checkstyle {
-    toolVersion "9.0.1"
-    configFile file("${project.rootDir}/config/checkstyle/checkstyle.xml")
-    configProperties = [configDirectory: "${project.rootDir}/config/checkstyle"]
+    setToolVersion("9.2")
+    setConfigFile(this.file("${this.getRootDir()}/config/checkstyle/checkstyle.xml"))
+    setConfigProperties("configDirectory": "${this.getRootDir()}/config/checkstyle")
 
     // The build should immediately fail if we have errors.
-    maxErrors = 0
-    maxWarnings = 0
+    setMaxErrors(0)
+    setMaxWarnings(0)
 }
 
-tasks.withType(SpotBugsTask) {
+getTasks().withType(SpotBugsTask) {
     reports {
         html {
-            enabled = true
-            destination = file("$buildDir/reports/spotbugs/main/spotbugs.html")
-            stylesheet = "fancy-hist.xsl"
+            getRequired().set(true)
+            getOutputLocation().set(file("${this.getBuildDir()}/reports/spotbugs/main/spotbugs.html"))
+            setStylesheet("fancy-hist.xsl")
         }
     }
 }
 
-sourceSets.main.java.srcDir(tasks.register("generateTemplates", Copy) { task ->
-    task.inputs.properties "version": project.version
+sourceSets.main.getJava().srcDir(getTasks().register("generateTemplates", Copy) { task ->
+    task.getInputs().properties("version": getVersion())
 
-    task.from file("src/main/templates")
-    task.into layout.buildDirectory.dir("generated/sources/templates")
-    task.expand "version": project.version
+    task.from(file("src/main/templates"))
+        .into(getLayout().getBuildDirectory().dir("generated/sources/templates"))
+        .expand("version": getVersion())
 }.map {
-    it.outputs
+    it.getOutputs()
 })
 
-assemble.dependsOn shadowJar
+assemble.dependsOn(shadowJar)

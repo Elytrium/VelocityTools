@@ -21,6 +21,7 @@ import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.protocol.StateRegistry;
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.Settings;
@@ -29,6 +30,7 @@ import net.elytrium.velocitytools.utils.WhitelistUtil;
 
 public class HostnamesManagerHandler {
 
+  private final boolean ignoreCase;
   private final boolean blockPing;
   private final boolean blockJoin;
   private final boolean blockLocal;
@@ -39,6 +41,7 @@ public class HostnamesManagerHandler {
   private final boolean showBlockedOnly;
 
   public HostnamesManagerHandler() {
+    this.ignoreCase = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.IGNORE_CASE;
     this.blockPing = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_PING;
     this.blockJoin = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_JOIN;
     this.blockLocal = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_LOCAL_ADDRESSES;
@@ -55,13 +58,13 @@ public class HostnamesManagerHandler {
     this.showBlockedOnly = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.SHOW_BLOCKED_ONLY;
   }
 
-  public boolean checkAddress(StateRegistry type, MinecraftConnection connection, String serverAddress) {
+  public boolean checkAddress(StateRegistry type, MinecraftConnection connection, String originalServerAddress) {
     InetSocketAddress remoteAddress = (InetSocketAddress) connection.getRemoteAddress();
     String log;
     switch (type) {
       case STATUS: {
         if (this.blockPing) {
-          log = remoteAddress + " is pinging the server using: " + serverAddress;
+          log = remoteAddress + " is pinging the server using: " + originalServerAddress;
         } else {
           return false;
         }
@@ -69,7 +72,7 @@ public class HostnamesManagerHandler {
       }
       case LOGIN: {
         if (this.blockJoin) {
-          log = remoteAddress + " is joining the server using: " + serverAddress;
+          log = remoteAddress + " is joining the server using: " + originalServerAddress;
         } else {
           return false;
         }
@@ -80,7 +83,14 @@ public class HostnamesManagerHandler {
       }
     }
 
-    if ((this.blockLocal && (serverAddress.startsWith("127.") || serverAddress.equalsIgnoreCase("localhost")))
+    String serverAddress;
+    if (this.ignoreCase) {
+      serverAddress = originalServerAddress.toLowerCase(Locale.ROOT);
+    } else {
+      serverAddress = originalServerAddress;
+    }
+
+    if ((this.blockLocal && (originalServerAddress.startsWith("127.") || originalServerAddress.equalsIgnoreCase("localhost")))
         || (WhitelistUtil.checkForWhitelist(this.whitelist, this.hostnames.stream().anyMatch(pattern -> pattern.matcher(serverAddress).matches()))
         && this.whitelistedIps.stream().noneMatch(pattern -> pattern.matcher(remoteAddress.getAddress().getHostAddress()).matches()))) {
       this.debugInfo(log + " §c(blocked)", true);
