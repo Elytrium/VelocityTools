@@ -37,9 +37,11 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 class HandshakeHook extends Handshake implements PacketHook {
 
   private static Method cleanVhost;
+  private static Method getStateForProtocol;
   private static Field connectionField;
 
   private final HostnamesManagerHandler handler = new HostnamesManagerHandler();
+  private final boolean disableInvalidProtocol = Settings.IMP.TOOLS.DISABLE_INVALID_PROTOCOL;
   private final String kickReason = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.KICK_REASON;
   private final Component kickReasonComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.kickReason);
 
@@ -47,6 +49,10 @@ class HandshakeHook extends Handshake implements PacketHook {
   public boolean handle(MinecraftSessionHandler handler) {
     try {
       int nextStatus = this.getNextStatus();
+      if (this.disableInvalidProtocol && getStateForProtocol.invoke(handler, nextStatus) == null) {
+        return true;
+      }
+
       ProtocolVersion protocolVersion = this.getProtocolVersion();
 
       String serverAddress = (String) cleanVhost.invoke(handler, this.getServerAddress());
@@ -97,6 +103,9 @@ class HandshakeHook extends Handshake implements PacketHook {
     try {
       cleanVhost = HandshakeSessionHandler.class.getDeclaredMethod("cleanVhost", String.class);
       cleanVhost.setAccessible(true);
+
+      getStateForProtocol = HandshakeSessionHandler.class.getDeclaredMethod("getStateForProtocol", int.class);
+      getStateForProtocol.setAccessible(true);
 
       connectionField = HandshakeSessionHandler.class.getDeclaredField("connection");
       connectionField.setAccessible(true);

@@ -1,7 +1,5 @@
 //file:noinspection GroovyAssignabilityCheck
 
-import com.github.spotbugs.snom.SpotBugsTask
-
 plugins {
     id("java")
     id("checkstyle")
@@ -11,7 +9,7 @@ plugins {
 }
 
 setGroup("net.elytrium")
-setVersion("1.1.6")
+setVersion("1.1.7")
 
 compileJava {
     getOptions().setEncoding("UTF-8")
@@ -63,7 +61,7 @@ license {
 
 checkstyle {
     setToolVersion("9.2")
-    setConfigFile(this.file("${this.getRootDir()}/config/checkstyle/checkstyle.xml"))
+    setConfigFile(file("${this.getRootDir()}/config/checkstyle/checkstyle.xml"))
     setConfigProperties("configDirectory": "${this.getRootDir()}/config/checkstyle")
 
     // The build should immediately fail if we have errors.
@@ -71,7 +69,7 @@ checkstyle {
     setMaxWarnings(0)
 }
 
-getTasks().withType(SpotBugsTask) {
+spotbugsMain {
     reports {
         html {
             getRequired().set(true)
