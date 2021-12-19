@@ -31,7 +31,8 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 public class HubCommand implements SimpleCommand {
 
   private final ProxyServer server;
-  private final String serverName;
+  private final List<String> servers;
+  private int serversCounter;
   private final Component disabledServer;
   private final List<String> disabledServers;
   private final String youGotMoved;
@@ -39,7 +40,8 @@ public class HubCommand implements SimpleCommand {
 
   public HubCommand(ProxyServer server) {
     this.server = server;
-    this.serverName = Settings.IMP.COMMANDS.HUB.SERVER;
+    this.servers = Settings.IMP.COMMANDS.HUB.SERVERS;
+    this.serversCounter = this.servers.size();
     this.disabledServers = Settings.IMP.COMMANDS.HUB.DISABLED_SERVERS;
     this.disabledServer = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.HUB.DISABLED_SERVER);
     this.youGotMoved = Settings.IMP.COMMANDS.HUB.YOU_GOT_MOVED;
@@ -56,9 +58,20 @@ public class HubCommand implements SimpleCommand {
 
     Player player = (Player) source;
 
-    RegisteredServer toConnect = this.server.getServer(this.serverName).orElse(null);
+    String serverName;
+    int serversSize = this.servers.size();
+    if (serversSize > 1) {
+      if (++this.serversCounter >= serversSize) {
+        this.serversCounter = 0;
+      }
+
+      serverName = this.servers.get(this.serversCounter);
+    } else {
+      serverName = this.servers.get(0);
+    }
+    RegisteredServer toConnect = this.server.getServer(serverName).orElse(null);
     if (toConnect == null) {
-      source.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(this.serverName)));
+      source.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(serverName)));
       return;
     }
 
