@@ -94,7 +94,7 @@ public class Settings extends Config {
     public static class HUB {
 
       public boolean ENABLED = true;
-      public String SERVER = "hub";
+      public List<String> SERVERS = List.of("hub-1", "hub-2");
       @Comment("Set to \"\" to disable.")
       public String YOU_GOT_MOVED = "&aYou have been moved to a hub!";
       public String DISABLED_SERVER = "&cYou cannot use this command here.";
@@ -107,7 +107,7 @@ public class Settings extends Config {
 
     @Comment("Hides the Legacy Ping message.")
     public boolean DISABLE_LEGACY_PING = true;
-    @Comment("Hides the \"... provided invalid protocol ...\" message. Helps with some types of attacks (https://media.discordapp.net/attachments/868930650537857024/921383075454259300/unknown.png).")
+    @Comment("Hides the \"... provided invalid protocol ...\" message. Helps with some types of attacks. (https://media.discordapp.net/attachments/868930650537857024/921383075454259300/unknown.png)")
     public boolean DISABLE_INVALID_PROTOCOL = true;
 
     @Create
