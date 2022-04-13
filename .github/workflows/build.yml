@@ -28,11 +28,17 @@ jobs:
         with:
           name: VelocityTools
           path: build/libs/velocity_tools-*.jar
+      - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true
+          tag_name: dev-build
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Release the build
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/libs/velocity_tools-*.jar"
-          body: ${{ join(github.event.commits, '\n') }}
+          body: ${{ join(github.event.commits.*.message, '\n') }}
           prerelease: true
           name: Dev-build
           tag: dev-build
