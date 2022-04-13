@@ -28,3 +28,11 @@ jobs:
         with:
           name: VelocityTools
           path: build/libs/velocity_tools-*.jar
+      - name: Release the build
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "build/libs/velocity_tools-*.jar"
+          body: ${{ join(github.event.commits, '\n') }}
+          prerelease: true
+          name: Dev-build
+          tag: dev-build
