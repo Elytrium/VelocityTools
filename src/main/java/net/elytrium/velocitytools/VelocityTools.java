@@ -26,6 +26,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
+import net.elytrium.java.commons.updates.UpdatesChecker;
 import net.elytrium.velocitytools.commands.AlertCommand;
 import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
@@ -35,7 +36,6 @@ import net.elytrium.velocitytools.hooks.HooksInitializer;
 import net.elytrium.velocitytools.listeners.BrandChangerPingListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerPingListener;
-import net.elytrium.velocitytools.utils.UpdatesChecker;
 import org.bstats.velocity.Metrics;
 import org.slf4j.Logger;
 
@@ -78,7 +78,12 @@ public class VelocityTools {
 
     HooksInitializer.init(this.server);
 
-    UpdatesChecker.checkForUpdates(this.getLogger());
+    if (!UpdatesChecker.checkVersionByURL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION", Settings.IMP.VERSION)) {
+      this.logger.error("****************************************");
+      this.logger.warn("The new VelocityTools update was found, please update.");
+      this.logger.error("https://github.com/Elytrium/VelocityTools/releases/");
+      this.logger.error("****************************************");
+    }
     this.metricsFactory.make(this, 12708);
   }
 
