@@ -18,7 +18,11 @@
 package net.elytrium.velocitytools.handlers;
 
 import com.velocitypowered.proxy.connection.MinecraftConnection;
+import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
+import com.velocitypowered.proxy.connection.client.HandshakeSessionHandler;
 import com.velocitypowered.proxy.protocol.StateRegistry;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Locale;
@@ -30,6 +34,8 @@ import net.elytrium.velocitytools.utils.WhitelistUtil;
 
 public class HostnamesManagerHandler {
 
+
+  private static Method cleanVhost;
   private final boolean ignoreCase;
   private final boolean blockPing;
   private final boolean blockJoin;
@@ -58,13 +64,14 @@ public class HostnamesManagerHandler {
     this.showBlockedOnly = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.SHOW_BLOCKED_ONLY;
   }
 
-  public boolean checkAddress(StateRegistry type, MinecraftConnection connection, String originalServerAddress) {
-    InetSocketAddress remoteAddress = (InetSocketAddress) connection.getRemoteAddress();
+  public boolean checkAddress(StateRegistry type, MinecraftConnection connection, MinecraftSessionHandler handler,
+                              String initialServerAddress) throws IllegalAccessException, InvocationTargetException {
     String log;
+
     switch (type) {
       case STATUS: {
         if (this.blockPing) {
-          log = remoteAddress + " is pinging the server using: " + originalServerAddress;
+          log = "{} is pinging the server using: {}";
         } else {
           return false;
         }
@@ -72,7 +79,7 @@ public class HostnamesManagerHandler {
       }
       case LOGIN: {
         if (this.blockJoin) {
-          log = remoteAddress + " is joining the server using: " + originalServerAddress;
+          log = "{} is joining the server using: {}";
         } else {
           return false;
         }
@@ -83,6 +90,9 @@ public class HostnamesManagerHandler {
       }
     }
 
+    InetSocketAddress remoteAddress = (InetSocketAddress) connection.getRemoteAddress();
+
+    String originalServerAddress = (String) cleanVhost.invoke(handler, initialServerAddress);
     String serverAddress;
     if (this.ignoreCase) {
       serverAddress = originalServerAddress.toLowerCase(Locale.ROOT);
@@ -93,21 +103,34 @@ public class HostnamesManagerHandler {
     if ((this.blockLocal && (originalServerAddress.startsWith("127.") || originalServerAddress.equalsIgnoreCase("localhost")))
         || (WhitelistUtil.checkForWhitelist(this.whitelist, this.hostnames.stream().anyMatch(pattern -> pattern.matcher(serverAddress).matches()))
         && this.whitelistedIps.stream().noneMatch(pattern -> pattern.matcher(remoteAddress.getAddress().getHostAddress()).matches()))) {
-      this.debugInfo(log + " §c(blocked)", true);
+      this.debugInfo(log + " §c(blocked)", remoteAddress, originalServerAddress, true);
       return true;
     } else {
-      this.debugInfo(log, false);
+      this.debugInfo(log, remoteAddress, originalServerAddress, false);
       return false;
     }
   }
 
-  private void debugInfo(String msg, boolean blocked) {
+  private void debugInfo(String msg, InetSocketAddress remoteAddress, String hostname, boolean blocked) {
     if (this.debug) {
       if (this.showBlockedOnly && !blocked) {
         return;
       }
 
-      VelocityTools.getInstance().getLogger().info(msg);
+      VelocityTools.getInstance().getLogger().info(msg, remoteAddress, hostname);
     }
+  }
+
+  private static void init() {
+    try {
+      cleanVhost = HandshakeSessionHandler.class.getDeclaredMethod("cleanVhost", String.class);
+      cleanVhost.setAccessible(true);
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    }
+  }
+
+  static {
+    init();
   }
 }
