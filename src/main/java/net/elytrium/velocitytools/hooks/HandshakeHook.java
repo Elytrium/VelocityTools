@@ -17,7 +17,6 @@
 
 package net.elytrium.velocitytools.hooks;
 
-import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.client.HandshakeSessionHandler;
@@ -36,7 +35,6 @@ import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 class HandshakeHook extends Handshake implements PacketHook {
 
-  private static Method cleanVhost;
   private static Method getStateForProtocol;
   private static Field connectionField;
 
@@ -53,27 +51,21 @@ class HandshakeHook extends Handshake implements PacketHook {
         return true;
       }
 
-      ProtocolVersion protocolVersion = this.getProtocolVersion();
-
-      String serverAddress = (String) cleanVhost.invoke(handler, this.getServerAddress());
       MinecraftConnection connection = (MinecraftConnection) connectionField.get(handler);
-
       if (nextStatus == StateRegistry.STATUS_ID) {
-        if (this.handler.checkAddress(StateRegistry.STATUS, connection, serverAddress)) {
+        if (this.handler.checkAddress(StateRegistry.STATUS, connection, handler, this.getServerAddress())) {
           connection.close();
           return true;
         }
-      }
-
-      if (nextStatus == StateRegistry.LOGIN_ID) {
+      } else if (nextStatus == StateRegistry.LOGIN_ID) {
         StateRegistry login = StateRegistry.LOGIN;
-        if (this.handler.checkAddress(login, connection, serverAddress)) {
+        if (this.handler.checkAddress(login, connection, handler, this.getServerAddress())) {
           if (!this.kickReason.isEmpty()) {
             connection.setState(login);
-            connection.setProtocolVersion(protocolVersion);
+            connection.setProtocolVersion(this.getProtocolVersion());
           }
 
-          connection.closeWith(Disconnect.create(this.kickReasonComponent, protocolVersion));
+          connection.closeWith(Disconnect.create(this.kickReasonComponent, this.getProtocolVersion()));
           return true;
         }
       }
@@ -101,9 +93,6 @@ class HandshakeHook extends Handshake implements PacketHook {
 
   private static void init() {
     try {
-      cleanVhost = HandshakeSessionHandler.class.getDeclaredMethod("cleanVhost", String.class);
-      cleanVhost.setAccessible(true);
-
       getStateForProtocol = HandshakeSessionHandler.class.getDeclaredMethod("getStateForProtocol", int.class);
       getStateForProtocol.setAccessible(true);
 
