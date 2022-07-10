@@ -23,15 +23,19 @@ import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.proxy.protocol.StateRegistry;
 import java.io.File;
 import java.nio.file.Path;
 import java.util.List;
+import net.elytrium.fastprepare.PreparedPacket;
+import net.elytrium.fastprepare.PreparedPacketFactory;
 import net.elytrium.java.commons.updates.UpdatesChecker;
 import net.elytrium.velocitytools.commands.AlertCommand;
 import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
 import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
+import net.elytrium.velocitytools.hooks.HandshakeHook;
 import net.elytrium.velocitytools.hooks.HooksInitializer;
 import net.elytrium.velocitytools.listeners.BrandChangerPingListener;
 import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
@@ -48,12 +52,13 @@ import org.slf4j.Logger;
 )
 public class VelocityTools {
 
-  private static VelocityTools instance;
+  private static VelocityTools INSTANCE;
 
   private final ProxyServer server;
   private final Path dataDirectory;
   private final Logger logger;
   private final Metrics.Factory metricsFactory;
+  private final PreparedPacketFactory packetFactory;
 
   @Inject
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
@@ -63,6 +68,7 @@ public class VelocityTools {
     this.dataDirectory = dataDirectory;
     this.logger = logger;
     this.metricsFactory = metricsFactory;
+    this.packetFactory = new PreparedPacketFactory(PreparedPacket::new, StateRegistry.LOGIN, false, 1, 1);
 
     try {
       Class.forName("com.velocitypowered.proxy.connection.client.LoginInboundConnection");
@@ -131,14 +137,16 @@ public class VelocityTools {
       this.server.getEventManager().register(this, new ProtocolBlockerJoinListener());
     }
     ///////////////////////////////////
+
+    HandshakeHook.reload(this.packetFactory);
   }
 
   private static void setInstance(VelocityTools instance) {
-    VelocityTools.instance = instance;
+    VelocityTools.INSTANCE = instance;
   }
 
   public static VelocityTools getInstance() {
-    return instance;
+    return INSTANCE;
   }
 
   public Logger getLogger() {

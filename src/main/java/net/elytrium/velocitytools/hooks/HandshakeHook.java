@@ -17,9 +17,11 @@
 
 package net.elytrium.velocitytools.hooks;
 
+import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.proxy.connection.MinecraftConnection;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.client.HandshakeSessionHandler;
+import com.velocitypowered.proxy.network.Connections;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.StateRegistry;
 import com.velocitypowered.proxy.protocol.packet.Disconnect;
@@ -28,44 +30,40 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
+import net.elytrium.fastprepare.PreparedPacket;
+import net.elytrium.fastprepare.PreparedPacketFactory;
 import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
-class HandshakeHook extends Handshake implements PacketHook {
+public class HandshakeHook extends Handshake implements PacketHook {
 
-  private static Method getStateForProtocol;
-  private static Field connectionField;
-
-  private final HostnamesManagerHandler handler = new HostnamesManagerHandler();
-  private final boolean disableInvalidProtocol = Settings.IMP.TOOLS.DISABLE_INVALID_PROTOCOL;
-  private final String kickReason = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.KICK_REASON;
-  private final Component kickReasonComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.kickReason);
+  private static Method GET_STATE_FOR_PROTOCOL;
+  private static Field CONNECTION_FIELD;
+  private static HostnamesManagerHandler HOSTNAMES_HANDLER;
+  private static PreparedPacket DISCONNECT_PACKET;
+  private static boolean DISABLE_INVALID_PROTOCOL;
 
   @Override
   public boolean handle(MinecraftSessionHandler handler) {
     try {
       int nextStatus = this.getNextStatus();
-      if (this.disableInvalidProtocol && getStateForProtocol.invoke(handler, nextStatus) == null) {
+      if (DISABLE_INVALID_PROTOCOL && GET_STATE_FOR_PROTOCOL.invoke(handler, nextStatus) == null) {
         return true;
       }
 
-      MinecraftConnection connection = (MinecraftConnection) connectionField.get(handler);
+      MinecraftConnection connection = (MinecraftConnection) CONNECTION_FIELD.get(handler);
       if (nextStatus == StateRegistry.STATUS_ID) {
-        if (this.handler.checkAddress(StateRegistry.STATUS, connection, handler, this.getServerAddress())) {
+        if (HOSTNAMES_HANDLER.checkAddress(StateRegistry.STATUS, connection, handler, this.getServerAddress())) {
           connection.close();
           return true;
         }
       } else if (nextStatus == StateRegistry.LOGIN_ID) {
         StateRegistry login = StateRegistry.LOGIN;
-        if (this.handler.checkAddress(login, connection, handler, this.getServerAddress())) {
-          if (!this.kickReason.isEmpty()) {
-            connection.setState(login);
-            connection.setProtocolVersion(this.getProtocolVersion());
-          }
-
-          connection.closeWith(Disconnect.create(this.kickReasonComponent, this.getProtocolVersion()));
+        if (HOSTNAMES_HANDLER.checkAddress(login, connection, handler, this.getServerAddress())) {
+          connection.getChannel().pipeline().remove(Connections.FRAME_ENCODER);
+          connection.closeWith(DISCONNECT_PACKET.getPackets(this.getProtocolVersion()));
           return true;
         }
       }
@@ -91,19 +89,31 @@ class HandshakeHook extends Handshake implements PacketHook {
     return this.getClass();
   }
 
-  private static void init() {
+  public static void reload(PreparedPacketFactory factory) {
     try {
-      getStateForProtocol = HandshakeSessionHandler.class.getDeclaredMethod("getStateForProtocol", int.class);
-      getStateForProtocol.setAccessible(true);
+      GET_STATE_FOR_PROTOCOL = HandshakeSessionHandler.class.getDeclaredMethod("getStateForProtocol", int.class);
+      GET_STATE_FOR_PROTOCOL.setAccessible(true);
 
-      connectionField = HandshakeSessionHandler.class.getDeclaredField("connection");
-      connectionField.setAccessible(true);
+      CONNECTION_FIELD = HandshakeSessionHandler.class.getDeclaredField("connection");
+      CONNECTION_FIELD.setAccessible(true);
+
+      HOSTNAMES_HANDLER = new HostnamesManagerHandler();
+
+      String kickReason = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.KICK_REASON;
+      Component kickReasonComponent;
+      if (kickReason.isEmpty()) {
+        kickReasonComponent = Component.empty();
+      } else {
+        kickReasonComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(kickReason);
+      }
+
+      DISCONNECT_PACKET = factory
+          .createPreparedPacket(ProtocolVersion.MINIMUM_VERSION, ProtocolVersion.MAXIMUM_VERSION)
+          .prepare(version -> Disconnect.create(kickReasonComponent, version));
+
+      DISABLE_INVALID_PROTOCOL = Settings.IMP.TOOLS.DISABLE_INVALID_PROTOCOL;
     } catch (NoSuchMethodException | NoSuchFieldException e) {
       e.printStackTrace();
     }
-  }
-
-  static {
-    init();
   }
 }
