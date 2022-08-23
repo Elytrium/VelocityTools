@@ -86,6 +86,7 @@ public class Settings extends Config {
       public boolean ENABLED = true;
       public String CONSOLE = "CONSOLE";
       public String NOT_ENOUGH_ARGUMENTS = "&fNot enough arguments. Usage: &6/send <server|player|all|current> <target>";
+      @Comment("Set to \"\" to disable.")
       public String YOU_GOT_SUMMONED = "&fSummoned to &6{0} &fby &6{1}";
       public String PLAYER_NOT_ONLINE = "&6{0} &fis not online.";
       public String CALLBACK = "&aAttempting to send {0} players to {1}";

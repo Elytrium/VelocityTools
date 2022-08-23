@@ -118,7 +118,7 @@ public class SendCommand implements SimpleCommand {
             p.createConnectionRequest(target).connectWithIndication()
                 .thenAccept(isSuccessful -> {
                   sentPlayers.incrementAndGet();
-                  if (isSuccessful) {
+                  if (isSuccessful && !this.youGotSummoned.isEmpty()) {
                     p.sendMessage(summoned);
                   }
                 })
@@ -136,7 +136,7 @@ public class SendCommand implements SimpleCommand {
                 p.createConnectionRequest(target).connectWithIndication()
                     .thenAccept(isSuccessful -> {
                       sentPlayers.incrementAndGet();
-                      if (isSuccessful) {
+                      if (isSuccessful && !this.youGotSummoned.isEmpty()) {
                         p.sendMessage(summoned);
                       }
                     })
@@ -151,7 +151,7 @@ public class SendCommand implements SimpleCommand {
               p.createConnectionRequest(target).connectWithIndication()
                   .thenAccept(isSuccessful -> {
                     sentPlayers.incrementAndGet();
-                    if (isSuccessful) {
+                    if (isSuccessful && !this.youGotSummoned.isEmpty()) {
                       p.sendMessage(summoned);
                     }
                   })
@@ -162,7 +162,7 @@ public class SendCommand implements SimpleCommand {
             player.createConnectionRequest(target).connectWithIndication()
                 .thenAccept(isSuccessful -> {
                   sentPlayers.incrementAndGet();
-                  if (isSuccessful) {
+                  if (isSuccessful && !this.youGotSummoned.isEmpty()) {
                     player.sendMessage(summoned);
                   }
                 });
