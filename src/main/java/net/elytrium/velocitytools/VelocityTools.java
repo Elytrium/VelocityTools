@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Elytrium
+ * Copyright (C) 2021 - 2023 Elytrium
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -47,8 +47,10 @@ import org.slf4j.Logger;
     id = "velocity_tools",
     name = "VelocityTools",
     version = BuildConstants.VERSION,
-    url = "https://elytrium.net",
-    authors = {"mdxd44", "hevav"}
+    url = "https://elytrium.net/",
+    authors = {
+        "Elytrium (https://elytrium.net/)",
+    }
 )
 public class VelocityTools {
 

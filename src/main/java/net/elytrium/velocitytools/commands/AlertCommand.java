@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Elytrium
+ * Copyright (C) 2021 - 2023 Elytrium
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -56,7 +56,7 @@ public class AlertCommand implements SimpleCommand {
           source.sendMessage(component);
         }
 
-        this.server.getAllPlayers().forEach(player -> player.sendMessage(player, component));
+        this.server.getAllPlayers().forEach(player -> player.sendMessage(component));
       }
     }
   }
