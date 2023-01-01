@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021 Elytrium
+ * Copyright (C) 2021 - 2023 Elytrium
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -24,6 +24,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import java.lang.reflect.Method;
 import net.elytrium.velocitytools.Settings;
+import org.jetbrains.annotations.NotNull;
 
 public class ChannelInitializerHook extends ChannelInitializer<Channel> {
 
@@ -43,7 +44,7 @@ public class ChannelInitializerHook extends ChannelInitializer<Channel> {
   }
 
   @Override
-  protected void initChannel(Channel channel) throws Exception {
+  protected void initChannel(@NotNull Channel channel) throws Exception {
     this.initChannel.invoke(this.originalInitializer, channel);
     ChannelPipeline pipeline = channel.pipeline();
     if (Settings.IMP.TOOLS.DISABLE_LEGACY_PING && pipeline.names().contains(Connections.LEGACY_PING_DECODER)) {
