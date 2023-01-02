@@ -23,8 +23,8 @@ import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import java.text.MessageFormat;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class AlertCommand implements SimpleCommand {
 
@@ -35,9 +35,9 @@ public class AlertCommand implements SimpleCommand {
 
   public AlertCommand(ProxyServer server) {
     this.server = server;
-    this.messageNeeded = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.ALERT.MESSAGE_NEEDED);
+    this.messageNeeded = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.ALERT.MESSAGE_NEEDED);
     this.prefix = Settings.IMP.COMMANDS.ALERT.PREFIX;
-    this.emptyProxy = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.ALERT.EMPTY_PROXY);
+    this.emptyProxy = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.ALERT.EMPTY_PROXY);
   }
 
   @Override
@@ -48,7 +48,7 @@ public class AlertCommand implements SimpleCommand {
     if (args.length == 0) {
       source.sendMessage(this.messageNeeded);
     } else {
-      Component component = LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(this.prefix, String.join(" ", args)));
+      Component component = VelocityTools.getSerializer().deserialize(MessageFormat.format(this.prefix, String.join(" ", args)));
       if (this.server.getAllPlayers().size() < 1) {
         source.sendMessage(this.emptyProxy);
       } else {

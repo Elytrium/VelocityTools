@@ -26,9 +26,9 @@ import java.lang.invoke.MethodHandles;
 import java.util.List;
 import net.elytrium.java.commons.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.utils.WhitelistUtil;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class ProtocolBlockerJoinListener {
 
@@ -47,7 +47,7 @@ public class ProtocolBlockerJoinListener {
 
     this.whitelist = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.WHITELIST;
     this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
-    this.kickReason = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.TOOLS.PROTOCOL_BLOCKER.KICK_REASON);
+    this.kickReason = VelocityTools.getSerializer().deserialize(Settings.IMP.TOOLS.PROTOCOL_BLOCKER.KICK_REASON);
   }
 
   @Subscribe

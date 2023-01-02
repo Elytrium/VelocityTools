@@ -28,8 +28,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class FindCommand implements SimpleCommand {
 
@@ -39,7 +39,7 @@ public class FindCommand implements SimpleCommand {
 
   public FindCommand(ProxyServer server) {
     this.server = server;
-    this.usernameNeeded = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.FIND.USERNAME_NEEDED);
+    this.usernameNeeded = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.FIND.USERNAME_NEEDED);
     this.playerOnlineAt = Settings.IMP.COMMANDS.FIND.PLAYER_ONLINE_AT;
   }
 
@@ -75,14 +75,14 @@ public class FindCommand implements SimpleCommand {
         Optional<ServerConnection> server = player0.getCurrentServer();
         server.ifPresent(srv ->
             source.sendMessage(
-                LegacyComponentSerializer.legacyAmpersand().deserialize(
+                VelocityTools.getSerializer().deserialize(
                     MessageFormat.format(this.playerOnlineAt, player0.getUsername(), srv.getServerInfo().getName())
                 )
             )
         );
       } else {
         source.sendMessage(
-            LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(Settings.IMP.COMMANDS.FIND.PLAYER_NOT_ONLINE, args[0]))
+            VelocityTools.getSerializer().deserialize(MessageFormat.format(Settings.IMP.COMMANDS.FIND.PLAYER_NOT_ONLINE, args[0]))
         );
       }
     }

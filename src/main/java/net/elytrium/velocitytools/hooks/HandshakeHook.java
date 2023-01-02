@@ -34,9 +34,9 @@ import net.elytrium.fastprepare.PreparedPacket;
 import net.elytrium.fastprepare.PreparedPacketFactory;
 import net.elytrium.java.commons.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class HandshakeHook extends Handshake implements PacketHook {
 
@@ -105,7 +105,7 @@ public class HandshakeHook extends Handshake implements PacketHook {
       if (kickReason.isEmpty()) {
         kickReasonComponent = Component.empty();
       } else {
-        kickReasonComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(kickReason);
+        kickReasonComponent = VelocityTools.getSerializer().deserialize(kickReason);
       }
 
       DISCONNECT_PACKET = factory

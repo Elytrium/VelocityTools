@@ -23,9 +23,9 @@ import com.velocitypowered.api.event.proxy.ProxyPingEvent;
 import com.velocitypowered.api.proxy.server.ServerPing;
 import java.util.List;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.utils.WhitelistUtil;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class ProtocolBlockerPingListener {
 
@@ -40,7 +40,7 @@ public class ProtocolBlockerPingListener {
     this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
     this.brand = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.BRAND;
     this.motd = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.MOTD;
-    this.motdComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.motd);
+    this.motdComponent = VelocityTools.getSerializer().deserialize(this.motd);
   }
 
   @Subscribe(order = PostOrder.LAST)
