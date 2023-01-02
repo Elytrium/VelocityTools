@@ -17,11 +17,10 @@
 
 package net.elytrium.velocitytools;
 
-import java.io.File;
 import java.util.List;
-import net.elytrium.velocitytools.config.Config;
+import net.elytrium.java.commons.config.YamlConfig;
 
-public class Settings extends Config {
+public class Settings extends YamlConfig {
 
   @Ignore
   public static final Settings IMP = new Settings();
@@ -30,9 +29,20 @@ public class Settings extends Config {
   public String VERSION = BuildConstants.VERSION;
 
   @Create
+  public MAIN MAIN;
+  @Create
   public COMMANDS COMMANDS;
   @Create
   public TOOLS TOOLS;
+
+  public static class MAIN {
+
+    @Comment({
+        "VelocityTools will consume more RAM if this option is enabled, but compatibility with other plugins will be better",
+        "Enable it if you have a plugin installed that bypasses compression (e.g. Geyser)"
+    })
+    public boolean SAVE_UNCOMPRESSED_PACKETS = true;
+  }
 
   @Comment({
       "Don't use \\n, use {NL} for new line. Ampersand (&) color codes are supported too.\n",
@@ -165,15 +175,6 @@ public class Settings extends Config {
       public List<String> HOSTNAMES = List.of("your-domain.net", "your-domain.com");
       @Comment("List of IP addresses that will bypass this check.")
       public List<String> IGNORED_IPS = List.of("79.555.*", "228.1337.*");
-    }
-  }
-
-  public void reload(File file) {
-    if (this.load(file)) {
-      this.save(file);
-    } else {
-      this.save(file);
-      this.load(file);
     }
   }
 }

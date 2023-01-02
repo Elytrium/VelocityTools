@@ -20,6 +20,7 @@ package net.elytrium.velocitytools.hooks;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
+import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
 import com.velocitypowered.proxy.network.ConnectionManager;
 import com.velocitypowered.proxy.network.ServerChannelInitializerHolder;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
@@ -28,12 +29,15 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.util.collection.IntObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+import net.elytrium.java.commons.reflection.ReflectionException;
 
 /**
  * @author hevav
@@ -43,27 +47,29 @@ public class HooksInitializer {
   @SuppressWarnings("unchecked")
   public static void init(ProxyServer server) {
     try {
-      Field cm = server.getClass().getDeclaredField("cm");
-      cm.setAccessible(true);
+      MethodHandle cm = MethodHandles.privateLookupIn(server.getClass(), MethodHandles.lookup())
+          .findGetter(server.getClass(), "cm", ConnectionManager.class);
 
-      ServerChannelInitializerHolder serverChannelInitializer = ((ConnectionManager) cm.get(server)).getServerChannelInitializer();
+      ServerChannelInitializerHolder serverChannelInitializer = ((ConnectionManager) cm.invoke(server)).getServerChannelInitializer();
       Field initializerField = serverChannelInitializer.getClass().getDeclaredField("initializer");
       initializerField.setAccessible(true);
       ChannelInitializer<Channel> initializer = (ChannelInitializer<Channel>) initializerField.get(serverChannelInitializer);
       initializerField.set(serverChannelInitializer, new ChannelInitializerHook(initializer));
 
-      Field serverConnField = BackendPlaySessionHandler.class.getDeclaredField("serverConn");
-      serverConnField.setAccessible(true);
-      PluginMessageHook.serverConnField = serverConnField;
+      PluginMessageHook.SERVER_CONNECTION_FIELD = MethodHandles
+          .privateLookupIn(BackendPlaySessionHandler.class, MethodHandles.lookup())
+          .findGetter(BackendPlaySessionHandler.class, "serverConn", VelocityServerConnection.class);
 
-      Field versionsField = StateRegistry.PacketRegistry.class.getDeclaredField("versions");
-      versionsField.setAccessible(true);
+      MethodHandle versionsField = MethodHandles.privateLookupIn(StateRegistry.PacketRegistry.class, MethodHandles.lookup())
+          .findGetter(StateRegistry.PacketRegistry.class, "versions", Map.class);
 
-      Field packetIdToSupplierField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetIdToSupplier");
-      packetIdToSupplierField.setAccessible(true);
+      MethodHandle packetIdToSupplierField = MethodHandles
+          .privateLookupIn(StateRegistry.PacketRegistry.ProtocolRegistry.class, MethodHandles.lookup())
+          .findGetter(StateRegistry.PacketRegistry.ProtocolRegistry.class, "packetIdToSupplier", IntObjectMap.class);
 
-      Field packetClassToIdField = StateRegistry.PacketRegistry.ProtocolRegistry.class.getDeclaredField("packetClassToId");
-      packetClassToIdField.setAccessible(true);
+      MethodHandle packetClassToIdField = MethodHandles
+          .privateLookupIn(StateRegistry.PacketRegistry.ProtocolRegistry.class, MethodHandles.lookup())
+          .findGetter(StateRegistry.PacketRegistry.ProtocolRegistry.class, "packetClassToId", Object2IntMap.class);
 
       List<PacketHook> hooks = new ArrayList<>();
       hooks.add(new PluginMessageHook());
@@ -72,10 +78,10 @@ public class HooksInitializer {
       BiConsumer<? super ProtocolVersion, ? super StateRegistry.PacketRegistry.ProtocolRegistry> consumer = (version, registry) -> {
         try {
           IntObjectMap<Supplier<? extends MinecraftPacket>> packetIdToSupplier
-              = (IntObjectMap<Supplier<? extends MinecraftPacket>>) packetIdToSupplierField.get(registry);
+              = (IntObjectMap<Supplier<? extends MinecraftPacket>>) packetIdToSupplierField.invoke(registry);
 
           Object2IntMap<Class<? extends MinecraftPacket>> packetClassToId
-              = (Object2IntMap<Class<? extends MinecraftPacket>>) packetClassToIdField.get(registry);
+              = (Object2IntMap<Class<? extends MinecraftPacket>>) packetClassToIdField.invoke(registry);
 
           hooks.forEach(hook -> {
             int packetId = packetClassToId.getInt(hook.getType());
@@ -83,15 +89,24 @@ public class HooksInitializer {
             packetIdToSupplier.remove(packetId);
             packetIdToSupplier.put(packetId, hook.getHook());
           });
-        } catch (IllegalAccessException e) {
-          e.printStackTrace();
+        } catch (Throwable e) {
+          throw new ReflectionException(e);
         }
       };
 
-      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.get(StateRegistry.PLAY.clientbound)).forEach(consumer);
-      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.get(StateRegistry.HANDSHAKE.serverbound)).forEach(consumer);
-    } catch (NoSuchFieldException | IllegalAccessException e) {
-      e.printStackTrace();
+      MethodHandle clientboundGetter = MethodHandles.privateLookupIn(StateRegistry.class, MethodHandles.lookup())
+          .findGetter(StateRegistry.class, "clientbound", StateRegistry.PacketRegistry.class);
+
+      MethodHandle serverboundGetter = MethodHandles.privateLookupIn(StateRegistry.class, MethodHandles.lookup())
+          .findGetter(StateRegistry.class, "serverbound", StateRegistry.PacketRegistry.class);
+
+      StateRegistry.PacketRegistry playClientbound = (StateRegistry.PacketRegistry) clientboundGetter.invokeExact(StateRegistry.PLAY);
+      StateRegistry.PacketRegistry handshakeServerbound = (StateRegistry.PacketRegistry) serverboundGetter.invokeExact(StateRegistry.HANDSHAKE);
+
+      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(playClientbound)).forEach(consumer);
+      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(handshakeServerbound)).forEach(consumer);
+    } catch (Throwable e) {
+      throw new ReflectionException(e);
     }
   }
 }

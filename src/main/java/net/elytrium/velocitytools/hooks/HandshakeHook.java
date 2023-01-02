@@ -32,6 +32,7 @@ import java.lang.reflect.Method;
 import java.util.function.Supplier;
 import net.elytrium.fastprepare.PreparedPacket;
 import net.elytrium.fastprepare.PreparedPacketFactory;
+import net.elytrium.java.commons.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
 import net.kyori.adventure.text.Component;
@@ -68,7 +69,7 @@ public class HandshakeHook extends Handshake implements PacketHook {
         }
       }
     } catch (IllegalAccessException | InvocationTargetException e) {
-      e.printStackTrace();
+      throw new ReflectionException(e);
     }
 
     return super.handle(handler);
@@ -113,7 +114,7 @@ public class HandshakeHook extends Handshake implements PacketHook {
 
       DISABLE_INVALID_PROTOCOL = Settings.IMP.TOOLS.DISABLE_INVALID_PROTOCOL;
     } catch (NoSuchMethodException | NoSuchFieldException e) {
-      e.printStackTrace();
+      throw new ReflectionException(e);
     }
   }
 }

@@ -28,15 +28,16 @@ import com.velocitypowered.proxy.protocol.packet.PluginMessage;
 import com.velocitypowered.proxy.protocol.util.PluginMessageUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.lang.reflect.Field;
+import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.function.Supplier;
+import net.elytrium.java.commons.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
 
 class PluginMessageHook extends PluginMessage implements PacketHook {
 
-  protected static Field serverConnField;
+  protected static MethodHandle SERVER_CONNECTION_FIELD;
 
   private final boolean enabled = Settings.IMP.TOOLS.BRAND_CHANGER.REWRITE_IN_GAME;
   private final String inGameBrand = Settings.IMP.TOOLS.BRAND_CHANGER.IN_GAME_BRAND;
@@ -45,11 +46,11 @@ class PluginMessageHook extends PluginMessage implements PacketHook {
   public boolean handle(MinecraftSessionHandler handler) {
     if (handler instanceof BackendPlaySessionHandler && this.enabled && PluginMessageUtil.isMcBrand(this)) {
       try {
-        ConnectedPlayer player = ((VelocityServerConnection) serverConnField.get(handler)).getPlayer();
+        ConnectedPlayer player = ((VelocityServerConnection) SERVER_CONNECTION_FIELD.invoke(handler)).getPlayer();
         player.getConnection().write(this.rewriteMinecraftBrand(this, player.getProtocolVersion()));
         return true;
-      } catch (IllegalAccessException e) {
-        e.printStackTrace();
+      } catch (Throwable e) {
+        throw new ReflectionException(e);
       }
     }
 
