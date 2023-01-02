@@ -70,12 +70,21 @@ public class VelocityTools {
     this.dataDirectory = dataDirectory;
     this.logger = logger;
     this.metricsFactory = metricsFactory;
-    this.packetFactory = new PreparedPacketFactory(PreparedPacket::new, StateRegistry.LOGIN, false, 1, 1);
+
+    Settings.IMP.reload(new File(this.dataDirectory.toFile().getAbsoluteFile(), "config.yml"));
+    this.packetFactory = new PreparedPacketFactory(
+        PreparedPacket::new,
+        StateRegistry.LOGIN,
+        false,
+        1,
+        1,
+        Settings.IMP.MAIN.SAVE_UNCOMPRESSED_PACKETS
+    );
 
     try {
       Class.forName("com.velocitypowered.proxy.connection.client.LoginInboundConnection");
     } catch (ClassNotFoundException e) {
-      this.getLogger().error("Please update your Velocity binary to 3.1.x", e);
+      this.getLogger().error("Please update your Velocity binary to 3.1.0+ version", e);
       this.server.shutdown();
     }
   }

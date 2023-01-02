@@ -60,13 +60,8 @@ public class VelocityToolsCommand implements SimpleCommand {
 
     if (args.length == 1) {
       if (args[0].equalsIgnoreCase("reload") && source.hasPermission("velocitytools.admin.reload")) {
-        try {
-          this.plugin.reload();
-          source.sendMessage(Component.text("§aСonfig reloaded successfully!"));
-        } catch (Exception e) {
-          source.sendMessage(Component.text("§cAn internal error has occurred!"));
-          e.printStackTrace();
-        }
+        this.plugin.reload();
+        source.sendMessage(Component.text("§aСonfig reloaded successfully!"));
       }
 
       return;
@@ -78,7 +73,7 @@ public class VelocityToolsCommand implements SimpleCommand {
   private void showHelp(CommandSource source) {
     source.sendMessage(Component.text("§eThis server is using VelocityTools"));
     source.sendMessage(Component.text("§e(c) 2021 - 2023 Elytrium"));
-    source.sendMessage(Component.text("§ahttps://ely.su/github/"));
+    source.sendMessage(Component.text("§ahttps://elytrium.net/github/"));
     source.sendMessage(Component.text("§r"));
     source.sendMessage(Component.text("§fAvailable subcommands:"));
     // Java moment
