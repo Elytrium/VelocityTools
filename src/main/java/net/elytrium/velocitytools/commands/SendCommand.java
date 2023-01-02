@@ -31,8 +31,8 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class SendCommand implements SimpleCommand {
 
@@ -45,7 +45,7 @@ public class SendCommand implements SimpleCommand {
 
   public SendCommand(ProxyServer server) {
     this.server = server;
-    this.notEnoughArguments = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.SEND.NOT_ENOUGH_ARGUMENTS);
+    this.notEnoughArguments = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.SEND.NOT_ENOUGH_ARGUMENTS);
     this.youGotSummoned = Settings.IMP.COMMANDS.SEND.YOU_GOT_SUMMONED;
     this.console = Settings.IMP.COMMANDS.SEND.CONSOLE;
     this.playerNotOnline = Settings.IMP.COMMANDS.SEND.PLAYER_NOT_ONLINE;
@@ -104,7 +104,7 @@ public class SendCommand implements SimpleCommand {
       return;
     }
 
-    Component summoned = LegacyComponentSerializer.legacyAmpersand().deserialize(
+    Component summoned = VelocityTools.getSerializer().deserialize(
         MessageFormat.format(
             this.youGotSummoned, target.getServerInfo().getName(),
             ((source instanceof Player) ? ((Player) source).getUsername() : this.console)
@@ -167,7 +167,7 @@ public class SendCommand implements SimpleCommand {
                   }
                 });
           } else {
-            source.sendMessage(LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(this.playerNotOnline, args[0])));
+            source.sendMessage(VelocityTools.getSerializer().deserialize(MessageFormat.format(this.playerNotOnline, args[0])));
           }
         }
         break;
@@ -175,7 +175,7 @@ public class SendCommand implements SimpleCommand {
     }
 
     source.sendMessage(
-        LegacyComponentSerializer.legacyAmpersand().deserialize(MessageFormat.format(this.callback, sentPlayers, target.getServerInfo().getName()))
+        VelocityTools.getSerializer().deserialize(MessageFormat.format(this.callback, sentPlayers, target.getServerInfo().getName()))
     );
   }
 

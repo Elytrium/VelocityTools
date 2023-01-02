@@ -25,8 +25,8 @@ import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.proxy.command.builtin.CommandMessages;
 import java.util.List;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 
 public class HubCommand implements SimpleCommand {
 
@@ -43,9 +43,9 @@ public class HubCommand implements SimpleCommand {
     this.servers = Settings.IMP.COMMANDS.HUB.SERVERS;
     this.serversCounter = this.servers.size();
     this.disabledServers = Settings.IMP.COMMANDS.HUB.DISABLED_SERVERS;
-    this.disabledServer = LegacyComponentSerializer.legacyAmpersand().deserialize(Settings.IMP.COMMANDS.HUB.DISABLED_SERVER);
+    this.disabledServer = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.HUB.DISABLED_SERVER);
     this.youGotMoved = Settings.IMP.COMMANDS.HUB.YOU_GOT_MOVED;
-    this.youGotMovedComponent = LegacyComponentSerializer.legacyAmpersand().deserialize(this.youGotMoved);
+    this.youGotMovedComponent = VelocityTools.getSerializer().deserialize(this.youGotMoved);
   }
 
   @Override

@@ -118,7 +118,7 @@ public class HostnamesManagerHandler {
         return;
       }
 
-      VelocityTools.getInstance().getLogger().info(msg, remoteAddress, hostname);
+      VelocityTools.getLogger().info(msg, remoteAddress, hostname);
     }
   }
 
