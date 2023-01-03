@@ -145,9 +145,20 @@ public class Settings extends YamlConfig {
       public boolean BLOCK_PING = false;
       @Comment("If true, all protocols except those listed below will be blocked.")
       public boolean WHITELIST = false;
-      // TODO: Ну либо какой то сайт чтобы генерировать либо что то типа того
-      @Comment("You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers")
+      @Comment({
+          "You can set either a protocol number here (e.g. '340' for 1.12.2) or a Minecraft version below (e.g. '1.12.2')",
+          "You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers",
+      })
       public List<Integer> PROTOCOLS = List.of(9999, 9998);
+      @Comment({
+          "List of versions:",
+          "1.7.2, 1.7.6, 1.8, 1.9, 1.9.1, 1.9.2, 1.9.4, 1.10, 1.11, 1.11.1, 1.12, 1.12.1, 1.12.2,",
+          "1.13, 1.13.1, 1.13.2, 1.14, 1.14.1, 1.14.2, 1.14.3, 1.14.4, 1.15, 1.15.1, 1.15.2,",
+          "1.16, 1.16.1, 1.16.2, 1.16.3, 1.16.4, 1.17, 1.17.1, 1.18, 1.18.2, 1.19, 1.19.1, 1.19.3, LATEST",
+      })
+      public List<String> VERSIONS = List.of("1.7.2");
+      public String MINIMUM_VERSION = "1.7.2";
+      public String MAXIMUM_VERSION = "LATEST";
       @Comment("For \"block-ping\" option.")
       public String BRAND = "Version is not supported!";
       @Comment("For \"block-ping\", set to \"\" to disable.")

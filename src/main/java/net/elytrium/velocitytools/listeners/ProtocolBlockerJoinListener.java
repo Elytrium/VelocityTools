@@ -19,14 +19,17 @@ package net.elytrium.velocitytools.listeners;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.PreLoginEvent;
+import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.proxy.connection.client.InitialInboundConnection;
 import com.velocitypowered.proxy.connection.client.LoginInboundConnection;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
+import java.util.stream.Collectors;
 import net.elytrium.java.commons.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.utils.ProtocolUtil;
 import net.elytrium.velocitytools.utils.WhitelistUtil;
 import net.kyori.adventure.text.Component;
 
@@ -34,7 +37,10 @@ public class ProtocolBlockerJoinListener {
 
   private final MethodHandle delegate;
   private final boolean whitelist;
-  private final List<Integer> protocols;
+  private final List<Integer> protocolNumbers;
+  private final List<ProtocolVersion> protocolVersions;
+  private final ProtocolVersion minimumProtocolVersion;
+  private final ProtocolVersion maximumProtocolVersion;
   private final Component kickReason;
 
   public ProtocolBlockerJoinListener() {
@@ -46,7 +52,12 @@ public class ProtocolBlockerJoinListener {
     }
 
     this.whitelist = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.WHITELIST;
-    this.protocols = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
+    this.protocolNumbers = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.PROTOCOLS;
+    this.protocolVersions = Settings.IMP.TOOLS.PROTOCOL_BLOCKER.VERSIONS.stream()
+        .map(ProtocolUtil::protocolVersionFromString)
+        .collect(Collectors.toList());
+    this.minimumProtocolVersion = ProtocolUtil.protocolVersionFromString(Settings.IMP.TOOLS.PROTOCOL_BLOCKER.MINIMUM_VERSION);
+    this.maximumProtocolVersion = ProtocolUtil.protocolVersionFromString(Settings.IMP.TOOLS.PROTOCOL_BLOCKER.MAXIMUM_VERSION);
     this.kickReason = VelocityTools.getSerializer().deserialize(Settings.IMP.TOOLS.PROTOCOL_BLOCKER.KICK_REASON);
   }
 
@@ -56,7 +67,11 @@ public class ProtocolBlockerJoinListener {
       InitialInboundConnection inbound = (InitialInboundConnection) this.delegate.invoke(event.getConnection());
 
       inbound.getConnection().eventLoop().execute(() -> {
-        if (WhitelistUtil.checkForWhitelist(this.whitelist, this.protocols.contains(event.getConnection().getProtocolVersion().getProtocol()))) {
+        ProtocolVersion playerProtocol = event.getConnection().getProtocolVersion();
+        if (this.minimumProtocolVersion.compareTo(playerProtocol) > 0 || this.maximumProtocolVersion.compareTo(playerProtocol) < 0
+            || WhitelistUtil.checkForWhitelist(this.whitelist,
+            this.protocolNumbers.contains(playerProtocol.getProtocol())
+                || this.protocolVersions.contains(playerProtocol))) {
           event.getConnection().getVirtualHost().ifPresent(conn -> inbound.disconnect(this.kickReason));
         }
       });
