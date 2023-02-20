@@ -171,7 +171,7 @@ public class Settings extends YamlConfig {
 
       public boolean REWRITE_IN_PING = true;
       public boolean REWRITE_IN_GAME = true;
-      public String PING_BRAND = "YourServer 1.12.2-1.17.1";
+      public String PING_BRAND = "YourServer 1.12.2-1.19.3";
       @Comment("For ping.")
       public boolean SHOW_ALWAYS = false;
       @Comment("{0} - Original server brand (e.g. Paper).")
@@ -181,8 +181,8 @@ public class Settings extends YamlConfig {
     @Comment("Doesn't work with srv records.")
     public static class HOSTNAMES_MANAGER {
 
-      public boolean BLOCK_JOIN = true;
-      public boolean BLOCK_PING = true;
+      public boolean BLOCK_JOIN = false;
+      public boolean BLOCK_PING = false;
       @Comment("Connections IP logging.")
       public boolean DEBUG = false;
       @Comment("For \"debug\" option.")
