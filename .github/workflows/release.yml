@@ -21,11 +21,11 @@ jobs:
         uses: actions/upload-artifact@v3.0.0
         with:
           name: VelocityTools
-          path: "*/build/libs/*.jar"
+          path: "build/libs/*.jar"
       - name: Find correct JAR
         id: find-jar
         run: |
-          output="$(find plugin/build/libs/ ! -name "*-javadoc.jar" ! -name "*-sources.jar" -type f -printf "%f\n")"
+          output="$(find build/libs/ ! -name "*-javadoc.jar" ! -name "*-sources.jar" -type f -printf "%f\n")"
           echo "::set-output name=jarname::$output"
       - name: Upload to the GitHub release
         uses: actions/upload-release-asset@v1
@@ -33,14 +33,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: plugin/build/libs/${{ steps.find-jar.outputs.jarname }}
+          asset_path: build/libs/${{ steps.find-jar.outputs.jarname }}
           asset_name: ${{ steps.find-jar.outputs.jarname }}
           asset_content_type: application/java-archive
       - name: Upload to Modrinth
         uses: RubixDev/modrinth-upload@v1.0.0
         with:
           token: ${{ secrets.MODRINTH_TOKEN }}
-          file_path: plugin/build/libs/${{ steps.find-jar.outputs.jarname }}
+          file_path: build/libs/${{ steps.find-jar.outputs.jarname }}
           name: Release ${{ github.event.release.tag_name }}
           version: ${{ github.event.release.tag_name }}
           changelog: ${{ github.event.release.body }}
