@@ -191,7 +191,7 @@ public class Settings extends YamlConfig {
       public String KICK_REASON = "&cPlease, don't connect to the direct ip!{NL}Use example.com";
       public boolean WHITELIST = true;
       @Comment("IP Addresses starting with \"127.\" or equal to \"localhost\" will be blocked.")
-      public boolean BLOCK_LOCAL_ADDRESSES = true;
+      public boolean BLOCK_LOCAL_ADDRESSES = false;
       @Comment("DoMaIn.net will be similar to domain.net.")
       public boolean IGNORE_CASE = true;
       public List<String> HOSTNAMES = List.of("your-domain.net", "your-domain.com");
