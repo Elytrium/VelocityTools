@@ -26,6 +26,12 @@ public class ProtocolUtil {
       return ProtocolVersion.MAXIMUM_VERSION;
     }
 
-    return ProtocolVersion.valueOf("MINECRAFT_" + string.replace(".", "_"));
+    for (ProtocolVersion protocolVersion : ProtocolVersion.values()) {
+      if (protocolVersion.getVersionsSupportedBy().contains(string)) {
+        return protocolVersion;
+      }
+    }
+
+    throw new UnsupportedOperationException("Unsupported version: " + string);
   }
 }
