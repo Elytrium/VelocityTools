@@ -1,96 +1,96 @@
-//file:noinspection GroovyAssignabilityCheck
+plugins() {
+  id("java")
 
-plugins {
-    id("java")
-    id("checkstyle")
-    id("com.github.spotbugs").version("5.0.13")
-    id("org.cadixdev.licenser").version("0.6.1")
-    id("com.github.johnrengelman.shadow").version("7.1.2")
+  id("com.github.johnrengelman.shadow").version("8.1.1")
+
+  id("checkstyle")
+  id("com.github.spotbugs").version("5.0.14")
+  id("org.cadixdev.licenser").version("0.6.1")
+
+  id("com.github.gmazzo.buildconfig").version("4.1.2") // Kotlin :skull:
 }
 
-setGroup("net.elytrium")
-setVersion("1.1.9")
+this.group = "net.elytrium"
+this.version = "1.2.0-SNAPSHOT"
 
-compileJava {
-    getOptions().setEncoding("UTF-8")
+compileJava() {
+  sourceCompatibility = "19"
+  targetCompatibility = "19"
+  options.getRelease().set(11)
+
+  options.setEncoding("UTF-8")
 }
 
-java {
-    setSourceCompatibility(JavaVersion.VERSION_11)
-    setTargetCompatibility(JavaVersion.VERSION_11)
+repositories() {
+  mavenCentral()
+
+  maven {
+    name = "papermc-repo"
+    url = "https://repo.papermc.io/repository/maven-public/"
+  }
+  maven {
+    name = "elytrium-repo"
+    url = "https://maven.elytrium.net/repo/"
+  }
 }
 
-repositories {
-    mavenCentral()
+dependencies() {
+  annotationProcessor("net.java.dev.jna:jna-platform:5.13.0")
+  annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
 
-    maven {
-        setName("papermc-repo")
-        setUrl("https://papermc.io/repo/repository/maven-public/")
-    }
-    maven {
-        setName("elytrium-repo")
-        setUrl("https://maven.elytrium.net/repo/")
-    }
+  compileOnly("com.github.spotbugs:spotbugs-annotations:4.7.3")
+
+  compileOnly("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
+  annotationProcessor("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
+  compileOnly("com.velocitypowered:velocity-proxy:3.2.0-SNAPSHOT") // From Elytrium Repo.
+
+  // Needs for some velocity methods.
+  compileOnly("io.netty:netty-transport:4.1.96.Final")
+  compileOnly("it.unimi.dsi:fastutil-core:8.5.12")
+
+  // To suppress VulnerableLibrariesLocal of velocity-api dependency.
+  compileOnly("org.yaml:snakeyaml:2.0")
+
+  implementation("net.elytrium:java-commons:1.1.0-SNAPSHOT")
+  implementation("net.elytrium:fastprepare:1.0.4")
+
+  implementation("org.bstats:bstats-velocity:3.0.2")
 }
 
-dependencies {
-    compileOnly("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
-    annotationProcessor("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
-    compileOnly("com.velocitypowered:velocity-proxy:3.2.0-SNAPSHOT") // From Elytrium Repo.
-    implementation("net.elytrium:java-commons:1.1.0-SNAPSHOT")
-    implementation("net.elytrium:fastprepare:1.0.4")
+shadowJar() {
+  archiveClassifier = ""
 
-    // Needs for some velocity methods.
-    compileOnly("io.netty:netty-codec:4.1.86.Final")
-    compileOnly("it.unimi.dsi:fastutil-core:8.5.11")
-
-    implementation("org.bstats:bstats-velocity:3.0.0")
-
-    compileOnly("com.github.spotbugs:spotbugs-annotations:4.6.0")
+  minimize()
+  enableRelocation = true
+  relocationPrefix = "net.elytrium.velocitytools.3rdparty"
 }
 
-shadowJar {
-    getArchiveClassifier().set("")
+checkstyle() {
+  toolVersion = "10.12.1"
 
-    minimize()
-
-    relocate("org.bstats", "net.elytrium.velocitytools.bstats")
-    relocate("net.elytrium.fastprepare", "net.elytrium.velocitytools.fastprepare")
-    relocate("net.elytrium.java.commons", "net.elytrium.velocitytools.commons")
+  configFile = file(".config/checkstyle/checkstyle.xml")
+  configProperties = ["configDirectory": "$rootDir/.config/checkstyle"]
+  maxErrors = 0
+  maxWarnings = 0
 }
 
-license {
-    setHeader(file("HEADER.txt"))
+spotbugsMain() {
+  reports.register("html") {
+    required = true
+    outputLocation.fileValue(file("$buildDir/reports/spotbugs/main/spotbugs.html"))
+    stylesheet = "fancy-hist.xsl"
+  }
 }
 
-checkstyle {
-    setToolVersion("9.2")
-    setConfigFile(file("${this.getRootDir()}/config/checkstyle/checkstyle.xml"))
-    setConfigProperties("configDirectory": "${this.getRootDir()}/config/checkstyle")
+license() {
+  header = file("HEADER.txt")
 
-    // The build should immediately fail if we have errors.
-    setMaxErrors(0)
-    setMaxWarnings(0)
+  exclude("**/BuildConfig.java")
 }
 
-spotbugsMain {
-    reports {
-        html {
-            getRequired().set(true)
-            getOutputLocation().set(file("${this.getBuildDir()}/reports/spotbugs/main/spotbugs.html"))
-            setStylesheet("fancy-hist.xsl")
-        }
-    }
+buildConfig() {
+  packageName("net.elytrium.velocitytools")
+  buildConfigField("String", "VERSION", "\"$version\"")
 }
-
-sourceSets.main.getJava().srcDir(getTasks().register("generateTemplates", Copy) { task ->
-    task.getInputs().properties("version": getVersion())
-
-    task.from(file("src/main/templates"))
-        .into(getLayout().getBuildDirectory().dir("generated/sources/templates"))
-        .expand("version": getVersion())
-}.map {
-    it.getOutputs()
-})
 
 assemble.dependsOn(shadowJar)

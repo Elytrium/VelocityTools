@@ -12,4 +12,6 @@
     <suppress files=".*[\\/]net[\\/]elytrium[\\/].*[\\/]Settings.java" checks="LineLength"/>
     <suppress files=".*[\\/]net[\\/]elytrium[\\/].*[\\/]Settings.java" checks="MemberName"/>
     <suppress files=".*[\\/]net[\\/]elytrium[\\/].*[\\/]Settings.java" checks="AbbreviationAsWordInName"/>
+
+    <suppress files=".*[\\/]net[\\/]elytrium[\\/].*[\\/]BuildConfig.java" checks=".*"/>
 </suppressions>

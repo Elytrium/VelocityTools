@@ -22,13 +22,15 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 import com.velocitypowered.proxy.command.builtin.CommandMessages;
 import java.text.MessageFormat;
+import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.VelocityTools;
@@ -42,6 +44,7 @@ public class SendCommand implements SimpleCommand {
   private final String console;
   private final String playerNotOnline;
   private final String callback;
+  private final Component notOnServer;
 
   public SendCommand(ProxyServer server) {
     this.server = server;
@@ -50,6 +53,7 @@ public class SendCommand implements SimpleCommand {
     this.console = Settings.IMP.COMMANDS.SEND.CONSOLE;
     this.playerNotOnline = Settings.IMP.COMMANDS.SEND.PLAYER_NOT_ONLINE;
     this.callback = Settings.IMP.COMMANDS.SEND.CALLBACK;
+    this.notOnServer = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.SEND.NOT_ON_SERVER);
   }
 
   @Override
@@ -104,79 +108,75 @@ public class SendCommand implements SimpleCommand {
       return;
     }
 
-    Component summoned = VelocityTools.getSerializer().deserialize(
-        MessageFormat.format(
-            this.youGotSummoned, target.getServerInfo().getName(),
-            ((source instanceof Player) ? ((Player) source).getUsername() : this.console)
-        )
-    );
+    Component summoned = VelocityTools.getSerializer().deserialize(MessageFormat.format(
+        this.youGotSummoned,
+        target.getServerInfo().getName(),
+        ((source instanceof Player) ? ((Player) source).getUsername() : this.console)
+    ));
 
-    AtomicInteger sentPlayers = new AtomicInteger();
+    int playersToProccess;
     switch (args[0].toLowerCase(Locale.ROOT)) {
-      case "all": {
-        this.server.getAllPlayers().forEach(p ->
-            p.createConnectionRequest(target).connectWithIndication()
-                .thenAccept(isSuccessful -> {
-                  sentPlayers.incrementAndGet();
-                  if (isSuccessful && !this.youGotSummoned.isEmpty()) {
-                    p.sendMessage(summoned);
-                  }
-                })
-        );
-        break;
-      }
-      case "current": {
-        if (!(source instanceof Player)) {
-          source.sendMessage(CommandMessages.PLAYERS_ONLY);
-          break;
-        }
-
-        ((Player) source).getCurrentServer().ifPresent(serverConnection ->
-            serverConnection.getServer().getPlayersConnected().forEach(p ->
-                p.createConnectionRequest(target).connectWithIndication()
-                    .thenAccept(isSuccessful -> {
-                      sentPlayers.incrementAndGet();
-                      if (isSuccessful && !this.youGotSummoned.isEmpty()) {
-                        p.sendMessage(summoned);
-                      }
-                    })
-            )
-        );
-        break;
-      }
-      default: {
-        RegisteredServer serverTarget = this.server.getServer(args[0]).orElse(null);
-        if (serverTarget != null) {
-          serverTarget.getPlayersConnected().forEach(p ->
-              p.createConnectionRequest(target).connectWithIndication()
-                  .thenAccept(isSuccessful -> {
-                    sentPlayers.incrementAndGet();
-                    if (isSuccessful && !this.youGotSummoned.isEmpty()) {
-                      p.sendMessage(summoned);
-                    }
-                  })
-          );
-        } else {
-          Player player = this.server.getPlayer(args[0]).orElse(null);
-          if (player != null) {
-            player.createConnectionRequest(target).connectWithIndication()
-                .thenAccept(isSuccessful -> {
-                  sentPlayers.incrementAndGet();
-                  if (isSuccessful && !this.youGotSummoned.isEmpty()) {
-                    player.sendMessage(summoned);
-                  }
-                });
-          } else {
-            source.sendMessage(VelocityTools.getSerializer().deserialize(MessageFormat.format(this.playerNotOnline, args[0])));
+      case "all" -> {
+        Collection<Player> players = this.server.getAllPlayers();
+        playersToProccess = players.size();
+        players.forEach(player -> player.createConnectionRequest(target).connectWithIndication().thenAccept(isSuccessful -> {
+          if (isSuccessful && !this.youGotSummoned.isEmpty()) {
+            player.sendMessage(summoned);
           }
+        }));
+      }
+      case "current" -> {
+        if (source instanceof Player player) {
+          Optional<ServerConnection> currentServer = player.getCurrentServer();
+          if (currentServer.isPresent()) {
+            Collection<Player> players = currentServer.get().getServer().getPlayersConnected();
+            playersToProccess = players.size();
+            players.forEach(next -> next.createConnectionRequest(target).connectWithIndication().thenAccept(isSuccessful -> {
+              if (isSuccessful && !this.youGotSummoned.isEmpty()) {
+                next.sendMessage(summoned);
+              }
+            }));
+          } else {
+            source.sendMessage(this.notOnServer);
+            return;
+          }
+        } else {
+          source.sendMessage(CommandMessages.PLAYERS_ONLY);
+          return;
         }
-        break;
+      }
+      default -> {
+        RegisteredServer server = this.server.getServer(args[0]).orElse(null);
+        if (server == null) {
+          Player player = this.server.getPlayer(args[0]).orElse(null);
+          if (player == null) {
+            source.sendMessage(VelocityTools.getSerializer().deserialize(MessageFormat.format(this.playerNotOnline, args[0])));
+            return;
+          } else {
+            playersToProccess = 1;
+            player.createConnectionRequest(target).connectWithIndication().thenAccept(isSuccessful -> {
+              if (isSuccessful && !this.youGotSummoned.isEmpty()) {
+                player.sendMessage(summoned);
+              }
+            });
+          }
+        } else {
+          Collection<Player> players = server.getPlayersConnected();
+          playersToProccess = players.size();
+          players.forEach(player -> player.createConnectionRequest(target).connectWithIndication().thenAccept(isSuccessful -> {
+            if (isSuccessful && !this.youGotSummoned.isEmpty()) {
+              player.sendMessage(summoned);
+            }
+          }));
+        }
       }
     }
 
-    source.sendMessage(
-        VelocityTools.getSerializer().deserialize(MessageFormat.format(this.callback, sentPlayers, target.getServerInfo().getName()))
-    );
+    source.sendMessage(VelocityTools.getSerializer().deserialize(MessageFormat.format(
+        this.callback,
+        playersToProccess,
+        target.getServerInfo().getName()
+    )));
   }
 
   @Override

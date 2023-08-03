@@ -26,6 +26,8 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.proxy.protocol.StateRegistry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
@@ -51,9 +53,9 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.slf4j.Logger;
 
 @Plugin(
-    id = "velocity_tools",
+    id = "velocity-tools",
     name = "VelocityTools",
-    version = BuildConstants.VERSION,
+    version = BuildConfig.VERSION,
     url = "https://elytrium.net/",
     authors = {
         "Elytrium (https://elytrium.net/)",
@@ -72,12 +74,23 @@ public class VelocityTools {
   private final PreparedPacketFactory packetFactory;
 
   @Inject
+  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
   public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
     setLogger(logger);
 
     this.server = server;
     this.dataDirectory = dataDirectory;
     this.metricsFactory = metricsFactory;
+
+    // Pre 1.2.0 migration.
+    Path oldDataDirectory;
+    if (Files.notExists(dataDirectory) && Files.exists(oldDataDirectory = dataDirectory.getParent().resolve("velocity_tools"))) {
+      try {
+        Files.move(oldDataDirectory, dataDirectory);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
 
     Settings.IMP.reload(new File(this.dataDirectory.toFile().getAbsoluteFile(), "config.yml"));
     this.packetFactory = new PreparedPacketFactory(
@@ -126,7 +139,7 @@ public class VelocityTools {
 
     List<String> aliases = Settings.IMP.COMMANDS.HUB.ALIASES;
     aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
-    if (Settings.IMP.COMMANDS.HUB.ENABLED && !Settings.IMP.COMMANDS.HUB.ALIASES.isEmpty()) {
+    if (Settings.IMP.COMMANDS.HUB.ENABLED && !aliases.isEmpty()) {
       this.server.getCommandManager().register(aliases.get(0), new HubCommand(this.server), aliases.toArray(new String[0]));
     }
 
