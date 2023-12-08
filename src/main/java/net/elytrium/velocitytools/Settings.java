@@ -155,7 +155,8 @@ public class Settings extends YamlConfig {
           "List of versions:",
           "1.7.2, 1.7.6, 1.8, 1.9, 1.9.1, 1.9.2, 1.9.4, 1.10, 1.11, 1.11.1, 1.12, 1.12.1, 1.12.2,",
           "1.13, 1.13.1, 1.13.2, 1.14, 1.14.1, 1.14.2, 1.14.3, 1.14.4, 1.15, 1.15.1, 1.15.2,",
-          "1.16, 1.16.1, 1.16.2, 1.16.3, 1.16.4, 1.17, 1.17.1, 1.18, 1.18.2, 1.19, 1.19.1, 1.19.3, 1.19.4, 1.20, LATEST",
+          "1.16, 1.16.1, 1.16.2, 1.16.3, 1.16.4, 1.17, 1.17.1, 1.18, 1.18.2, 1.19, 1.19.1, 1.19.3, 1.19.4,",
+          "1.20, 1.20.1, 1.20.2, 1.20.3, 1.20.4, LATEST",
       })
       public List<String> VERSIONS = List.of("1.7.2");
       public String MINIMUM_VERSION = "1.7.2";
@@ -172,7 +173,7 @@ public class Settings extends YamlConfig {
 
       public boolean REWRITE_IN_PING = true;
       public boolean REWRITE_IN_GAME = true;
-      public String PING_BRAND = "YourServer 1.12.2-1.20.1";
+      public String PING_BRAND = "YourServer 1.12.2-1.20.4";
       @Comment("For ping.")
       public boolean SHOW_ALWAYS = false;
       @Comment("{0} - Original server brand (e.g. Paper).")

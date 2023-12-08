@@ -20,6 +20,7 @@ package net.elytrium.velocitytools.hooks;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
+import com.velocitypowered.proxy.connection.backend.ConfigSessionHandler;
 import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
 import com.velocitypowered.proxy.network.ConnectionManager;
 import com.velocitypowered.proxy.network.ServerChannelInitializerHolder;
@@ -56,9 +57,13 @@ public class HooksInitializer {
       ChannelInitializer<Channel> initializer = (ChannelInitializer<Channel>) initializerField.get(serverChannelInitializer);
       initializerField.set(serverChannelInitializer, new ChannelInitializerHook(initializer));
 
-      PluginMessageHook.SERVER_CONNECTION_FIELD = MethodHandles
+      PluginMessageHook.SERVER_CONNECTION_BACKEND_PLAY_FIELD = MethodHandles
           .privateLookupIn(BackendPlaySessionHandler.class, MethodHandles.lookup())
           .findGetter(BackendPlaySessionHandler.class, "serverConn", VelocityServerConnection.class);
+
+      PluginMessageHook.SERVER_CONNECTION_CONFIG_FIELD = MethodHandles
+              .privateLookupIn(ConfigSessionHandler.class, MethodHandles.lookup())
+              .findGetter(ConfigSessionHandler.class, "serverConn", VelocityServerConnection.class);
 
       MethodHandle versionsField = MethodHandles.privateLookupIn(StateRegistry.PacketRegistry.class, MethodHandles.lookup())
           .findGetter(StateRegistry.PacketRegistry.class, "versions", Map.class);
@@ -101,9 +106,11 @@ public class HooksInitializer {
           .findGetter(StateRegistry.class, "serverbound", StateRegistry.PacketRegistry.class);
 
       StateRegistry.PacketRegistry playClientbound = (StateRegistry.PacketRegistry) clientboundGetter.invokeExact(StateRegistry.PLAY);
+      StateRegistry.PacketRegistry configClientbound = (StateRegistry.PacketRegistry) clientboundGetter.invokeExact(StateRegistry.CONFIG);
       StateRegistry.PacketRegistry handshakeServerbound = (StateRegistry.PacketRegistry) serverboundGetter.invokeExact(StateRegistry.HANDSHAKE);
 
       ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(playClientbound)).forEach(consumer);
+      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(configClientbound)).forEach(consumer);
       ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(handshakeServerbound)).forEach(consumer);
     } catch (Throwable e) {
       throw new ReflectionException(e);

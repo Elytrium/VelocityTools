@@ -1,1 +1,1 @@
-this.rootProject.setName("velocity-tools")
+rootProject.name = "velocity-tools"

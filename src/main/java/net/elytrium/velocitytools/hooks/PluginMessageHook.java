@@ -20,6 +20,7 @@ package net.elytrium.velocitytools.hooks;
 import com.velocitypowered.api.network.ProtocolVersion;
 import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
+import com.velocitypowered.proxy.connection.backend.ConfigSessionHandler;
 import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
@@ -37,18 +38,25 @@ import net.elytrium.velocitytools.Settings;
 
 class PluginMessageHook extends PluginMessage implements PacketHook {
 
-  protected static MethodHandle SERVER_CONNECTION_FIELD;
+  protected static MethodHandle SERVER_CONNECTION_BACKEND_PLAY_FIELD;
+  protected static MethodHandle SERVER_CONNECTION_CONFIG_FIELD;
 
   private final boolean enabled = Settings.IMP.TOOLS.BRAND_CHANGER.REWRITE_IN_GAME;
   private final String inGameBrand = Settings.IMP.TOOLS.BRAND_CHANGER.IN_GAME_BRAND;
 
   @Override
   public boolean handle(MinecraftSessionHandler handler) {
-    if (handler instanceof BackendPlaySessionHandler && this.enabled && PluginMessageUtil.isMcBrand(this)) {
+    if (this.enabled && PluginMessageUtil.isMcBrand(this)) {
       try {
-        ConnectedPlayer player = ((VelocityServerConnection) SERVER_CONNECTION_FIELD.invoke(handler)).getPlayer();
-        player.getConnection().write(this.rewriteMinecraftBrand(this, player.getProtocolVersion()));
-        return true;
+        if (handler instanceof BackendPlaySessionHandler) {
+          ConnectedPlayer player = ((VelocityServerConnection) SERVER_CONNECTION_BACKEND_PLAY_FIELD.invoke(handler)).getPlayer();
+          player.getConnection().write(this.rewriteMinecraftBrand(this, player.getProtocolVersion()));
+          return true;
+        } else if (handler instanceof ConfigSessionHandler) {
+          ConnectedPlayer player = ((VelocityServerConnection) SERVER_CONNECTION_CONFIG_FIELD.invoke(handler)).getPlayer();
+          player.getConnection().write(this.rewriteMinecraftBrand(this, player.getProtocolVersion()));
+          return true;
+        }
       } catch (Throwable e) {
         throw new ReflectionException(e);
       }
