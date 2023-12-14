@@ -16,7 +16,7 @@ this.version = "1.2.0-SNAPSHOT"
 compileJava() {
   sourceCompatibility = 17
   targetCompatibility = 17
-  options.getRelease().set(11)
+  options.getRelease().set(17)
 
   options.setEncoding("UTF-8")
 }
@@ -25,12 +25,16 @@ repositories() {
   mavenCentral()
 
   maven {
+    name = "papermc-repo"
+    url = "https://repo.papermc.io/repository/maven-public/"
+  }
+  maven {
     name = "elytrium-repo"
     url = "https://maven.elytrium.net/repo/"
   }
   maven {
-    name = "papermc-repo"
-    url = "https://repo.papermc.io/repository/maven-public/"
+    name = "sonatype-oss-snapshots1"
+    url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
   }
 }
 
