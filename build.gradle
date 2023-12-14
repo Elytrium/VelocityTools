@@ -24,10 +24,6 @@ compileJava() {
 repositories() {
   mavenCentral()
 
-  flatDir {
-    dirs("./libs")
-  }
-
   maven {
     name = "elytrium-repo"
     url = "https://maven.elytrium.net/repo/"
@@ -44,10 +40,9 @@ dependencies() {
 
   compileOnly("com.github.spotbugs:spotbugs-annotations:4.7.3")
 
-  compileOnly("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
-  annotationProcessor("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
-  //compileOnly("com.velocitypowered:velocity-proxy:3.2.0-SNAPSHOT") // From Elytrium Repo.
-  compileOnly(fileTree("libs")) // Dreeam - Velocity latest dev version
+  compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+  annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+  compileOnly("com.velocitypowered:velocity-proxy:3.3.0-SNAPSHOT") // From Elytrium Repo.
 
   // Needs for some velocity methods.
   compileOnly("io.netty:netty-transport:4.1.101.Final")
