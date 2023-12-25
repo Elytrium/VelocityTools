@@ -14,9 +14,9 @@ this.group = "net.elytrium"
 this.version = "1.2.0-SNAPSHOT"
 
 compileJava() {
-  sourceCompatibility = "19"
-  targetCompatibility = "19"
-  options.getRelease().set(11)
+  sourceCompatibility = 17
+  targetCompatibility = 17
+  options.getRelease().set(17)
 
   options.setEncoding("UTF-8")
 }
@@ -32,6 +32,10 @@ repositories() {
     name = "elytrium-repo"
     url = "https://maven.elytrium.net/repo/"
   }
+  maven {
+    name = "sonatype-oss-snapshots1"
+    url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
+  }
 }
 
 dependencies() {
@@ -40,25 +44,25 @@ dependencies() {
 
   compileOnly("com.github.spotbugs:spotbugs-annotations:4.7.3")
 
-  compileOnly("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
-  annotationProcessor("com.velocitypowered:velocity-api:3.2.0-SNAPSHOT")
-  compileOnly("com.velocitypowered:velocity-proxy:3.2.0-SNAPSHOT") // From Elytrium Repo.
+  compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+  annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
+  compileOnly("com.velocitypowered:velocity-proxy:3.3.0-SNAPSHOT") // From Elytrium Repo.
 
   // Needs for some velocity methods.
-  compileOnly("io.netty:netty-transport:4.1.96.Final")
+  compileOnly("io.netty:netty-transport:4.1.101.Final")
   compileOnly("it.unimi.dsi:fastutil-core:8.5.12")
 
   // To suppress VulnerableLibrariesLocal of velocity-api dependency.
-  compileOnly("org.yaml:snakeyaml:2.0")
+  compileOnly("org.yaml:snakeyaml:2.2")
 
-  implementation("net.elytrium:java-commons:1.1.0-SNAPSHOT")
-  implementation("net.elytrium:fastprepare:1.0.4")
+  implementation("net.elytrium:java-commons:1.1.1")
+  implementation("net.elytrium:fastprepare:1.0.8")
 
   implementation("org.bstats:bstats-velocity:3.0.2")
 }
 
 shadowJar() {
-  archiveClassifier = ""
+  archiveClassifier = null
 
   minimize()
   enableRelocation = true
@@ -77,7 +81,7 @@ checkstyle() {
 spotbugsMain() {
   reports.register("html") {
     required = true
-    outputLocation.fileValue(file("$buildDir/reports/spotbugs/main/spotbugs.html"))
+    outputLocation.fileValue(file("${project.layout.buildDirectory.get()}/reports/spotbugs/main/spotbugs.html"))
     stylesheet = "fancy-hist.xsl"
   }
 }

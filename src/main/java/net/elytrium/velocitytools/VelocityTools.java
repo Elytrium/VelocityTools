@@ -99,7 +99,8 @@ public class VelocityTools {
         false,
         1,
         1,
-        Settings.IMP.MAIN.SAVE_UNCOMPRESSED_PACKETS
+        Settings.IMP.MAIN.SAVE_UNCOMPRESSED_PACKETS,
+        false
     );
 
     try {
