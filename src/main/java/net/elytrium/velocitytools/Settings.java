@@ -18,73 +18,68 @@
 package net.elytrium.velocitytools;
 
 import java.util.List;
-import net.elytrium.java.commons.config.YamlConfig;
-import net.elytrium.java.commons.mc.serialization.Serializers;
+import net.elytrium.commons.kyori.serialization.Serializers;
+import net.elytrium.serializer.annotations.Comment;
+import net.elytrium.serializer.annotations.CommentValue;
+import net.elytrium.serializer.annotations.Final;
+import net.elytrium.serializer.language.object.YamlSerializable;
 
-public class Settings extends YamlConfig {
+public class Settings extends YamlSerializable {
 
-  @Ignore
   public static final Settings IMP = new Settings();
 
   @Final
   public String VERSION = BuildConfig.VERSION;
 
   @Comment({
-      "Available serializers:",
-      "LEGACY_AMPERSAND - \"&c&lExample &c&9Text\".",
-      "LEGACY_SECTION - \"§c§lExample §c§9Text\".",
-      "MINIMESSAGE - \"<bold><red>Example</red> <blue>Text</blue></bold>\". (https://webui.adventure.kyori.net/)",
-      "GSON - \"[{\"text\":\"Example\",\"bold\":true,\"color\":\"red\"},{\"text\":\" \",\"bold\":true},{\"text\":\"Text\",\"bold\":true,\"color\":\"blue\"}]\". (https://minecraft.tools/en/json_text.php/)",
-      "GSON_COLOR_DOWNSAMPLING - Same as GSON, but uses downsampling."
+      @CommentValue("Available serializers:"),
+      @CommentValue("LEGACY_AMPERSAND - \"&c&lExample &c&9Text\"."),
+      @CommentValue("LEGACY_SECTION - \"§c§lExample §c§9Text\"."),
+      @CommentValue("MINIMESSAGE - \"<bold><red>Example</red> <blue>Text</blue></bold>\". (https://webui.adventure.kyori.net/)"),
+      @CommentValue("GSON - \"[{\"text\":\"Example\",\"bold\":true,\"color\":\"red\"},{\"text\":\" \",\"bold\":true},{\"text\":\"Text\",\"bold\":true,\"color\":\"blue\"}]\". (https://minecraft.tools/en/json_text.php/)"),
+      @CommentValue("GSON_COLOR_DOWNSAMPLING - Same as GSON, but uses downsampling.")
   })
   public Serializers SERIALIZER = Serializers.LEGACY_AMPERSAND;
 
-  @Create
-  public MAIN MAIN;
-  @Create
-  public COMMANDS COMMANDS;
-  @Create
-  public TOOLS TOOLS;
+  public MAIN MAIN = new MAIN();
+  public COMMANDS COMMANDS = new COMMANDS();
+  public TOOLS TOOLS = new TOOLS();
 
   public static class MAIN {
 
     @Comment({
-        "VelocityTools will consume more RAM if this option is enabled, but compatibility with other plugins will be better",
-        "Enable it if you have a plugin installed that bypasses compression (e.g. Geyser)"
+        @CommentValue("VelocityTools will consume more RAM if this option is enabled, but compatibility with other plugins will be better"),
+        @CommentValue("Enable it if you have a plugin installed that bypasses compression (e.g. Geyser)")
     })
     public boolean SAVE_UNCOMPRESSED_PACKETS = true;
   }
 
   @Comment({
-      "Don't use \\n, use {NL} for new line. Ampersand (&) color codes are supported too.\n",
-      "",
-      "Permissions:",
-      "  │",
-      "  └── Commands:",
-      "      │",
-      "      ├── /velocitytools reload",
-      "      │   └── velocitytools.admin.reload",
-      "      ├── /alert",
-      "      │   └── velocitytools.command.alert",
-      "      ├── /find",
-      "      │   └── velocitytools.command.find",
-      "      ├── /send",
-      "      │   └── velocitytools.command.send",
-      "      └── /hub",
-      "          ├── velocitytools.command.hub",
-      "          └── velocitytools.command.hub.bypass.<servername> (disabled-servers bypass permission)",
-      ""
+      @CommentValue("Don't use \\n, use {NL} for new line. Ampersand (&) color codes are supported too.\n"),
+      @CommentValue(),
+      @CommentValue("Permissions:"),
+      @CommentValue("  │"),
+      @CommentValue("  └── Commands:"),
+      @CommentValue("      │"),
+      @CommentValue("      ├── /velocitytools reload"),
+      @CommentValue("      │   └── velocitytools.admin.reload"),
+      @CommentValue("      ├── /alert"),
+      @CommentValue("      │   └── velocitytools.command.alert"),
+      @CommentValue("      ├── /find"),
+      @CommentValue("      │   └── velocitytools.command.find"),
+      @CommentValue("      ├── /send"),
+      @CommentValue("      │   └── velocitytools.command.send"),
+      @CommentValue("      └── /hub"),
+      @CommentValue("          ├── velocitytools.command.hub"),
+      @CommentValue("          └── velocitytools.command.hub.bypass.<servername> (disabled-servers bypass permission)"),
+      @CommentValue()
   })
   public static class COMMANDS {
 
-    @Create
-    public ALERT ALERT;
-    @Create
-    public FIND FIND;
-    @Create
-    public SEND SEND;
-    @Create
-    public HUB HUB;
+    public ALERT ALERT = new ALERT();
+    public FIND FIND = new FIND();
+    public SEND SEND = new SEND();
+    public HUB HUB = new HUB();
 
     public static class ALERT {
 
@@ -107,7 +102,7 @@ public class Settings extends YamlConfig {
       public boolean ENABLED = true;
       public String CONSOLE = "CONSOLE";
       public String NOT_ENOUGH_ARGUMENTS = "&fNot enough arguments. Usage: &6/send <server|player|all|current> <target>";
-      @Comment("Set to \"\" to disable.")
+      @Comment(@CommentValue("Set to \"\" to disable."))
       public String YOU_GOT_SUMMONED = "&fSummoned to &6{0} &fby &6{1}";
       public String PLAYER_NOT_ONLINE = "&6{0} &fis not online.";
       public String CALLBACK = "&aAttempting to send {0} players to {1}";
@@ -118,7 +113,7 @@ public class Settings extends YamlConfig {
 
       public boolean ENABLED = true;
       public List<String> SERVERS = List.of("hub-1", "hub-2");
-      @Comment("Set to \"\" to disable.")
+      @Comment(@CommentValue("Set to \"\" to disable."))
       public String YOU_GOT_MOVED = "&aYou have been moved to a hub!";
       public String DISABLED_SERVER = "&cYou cannot use this command here.";
       public List<String> DISABLED_SERVERS = List.of("foo", "bar");
@@ -128,44 +123,41 @@ public class Settings extends YamlConfig {
 
   public static class TOOLS {
 
-    @Comment("Hides the Legacy Ping message.")
+    @Comment(@CommentValue("Hides the Legacy Ping message."))
     public boolean DISABLE_LEGACY_PING = true;
-    @Comment("Hides the \"... provided invalid protocol ...\" message. Helps with some types of attacks. (https://media.discordapp.net/attachments/868930650537857024/921383075454259300/unknown.png)")
+    @Comment(@CommentValue("Hides the \"... provided invalid protocol ...\" message. Helps with some types of attacks. (https://media.discordapp.net/attachments/868930650537857024/921383075454259300/unknown.png)"))
     public boolean DISABLE_INVALID_PROTOCOL = true;
 
-    @Create
-    public PROTOCOL_BLOCKER PROTOCOL_BLOCKER;
-    @Create
-    public BRAND_CHANGER BRAND_CHANGER;
-    @Create
-    public HOSTNAMES_MANAGER HOSTNAMES_MANAGER;
+    public PROTOCOL_BLOCKER PROTOCOL_BLOCKER = new PROTOCOL_BLOCKER();
+    public BRAND_CHANGER BRAND_CHANGER = new BRAND_CHANGER();
+    public HOSTNAMES_MANAGER HOSTNAMES_MANAGER = new HOSTNAMES_MANAGER();
 
     public static class PROTOCOL_BLOCKER {
 
       public boolean BLOCK_JOIN = true;
       public boolean BLOCK_PING = false;
-      @Comment("If true, all protocols except those listed below will be blocked.")
+      @Comment(@CommentValue("If true, all protocols except those listed below will be blocked."))
       public boolean WHITELIST = false;
       @Comment({
-          "You can set either a protocol number here (e.g. '340' for 1.12.2) or a Minecraft version below (e.g. '1.12.2')",
-          "You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers",
+          @CommentValue("You can set either a protocol number here (e.g. '340' for 1.12.2) or a Minecraft version below (e.g. '1.12.2')"),
+          @CommentValue("You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers"),
       })
       public List<Integer> PROTOCOLS = List.of(9999, 9998);
       @Comment({
-          "List of versions:",
-          "1.7.2, 1.7.6, 1.8, 1.9, 1.9.1, 1.9.2, 1.9.4, 1.10, 1.11, 1.11.1, 1.12, 1.12.1, 1.12.2,",
-          "1.13, 1.13.1, 1.13.2, 1.14, 1.14.1, 1.14.2, 1.14.3, 1.14.4, 1.15, 1.15.1, 1.15.2,",
-          "1.16, 1.16.1, 1.16.2, 1.16.3, 1.16.4, 1.17, 1.17.1, 1.18, 1.18.2, 1.19, 1.19.1, 1.19.3, 1.19.4,",
-          "1.20, 1.20.1, 1.20.2, 1.20.3, 1.20.4, LATEST",
+          @CommentValue("List of versions:"),
+          @CommentValue("1.7.2, 1.7.6, 1.8, 1.9, 1.9.1, 1.9.2, 1.9.4, 1.10, 1.11, 1.11.1, 1.12, 1.12.1, 1.12.2,"),
+          @CommentValue("1.13, 1.13.1, 1.13.2, 1.14, 1.14.1, 1.14.2, 1.14.3, 1.14.4, 1.15, 1.15.1, 1.15.2,"),
+          @CommentValue("1.16, 1.16.1, 1.16.2, 1.16.3, 1.16.4, 1.17, 1.17.1, 1.18, 1.18.2, 1.19, 1.19.1, 1.19.3, 1.19.4,"),
+          @CommentValue("1.20, 1.20.1, 1.20.2, 1.20.3, 1.20.4, LATEST"),
       })
       public List<String> VERSIONS = List.of("1.7.2");
       public String MINIMUM_VERSION = "1.7.2";
       public String MAXIMUM_VERSION = "LATEST";
-      @Comment("For \"block-ping\" option.")
+      @Comment(@CommentValue("For \"block-ping\" option."))
       public String BRAND = "Version is not supported!";
-      @Comment("For \"block-ping\", set to \"\" to disable.")
+      @Comment(@CommentValue("For \"block-ping\", set to \"\" to disable."))
       public String MOTD = "&cVersion is not supported!{NL}&ePlease, join with Minecraft 1.12.2 or newer.";
-      @Comment("For \"block-joining\" option.")
+      @Comment(@CommentValue("For \"block-joining\" option."))
       public String KICK_REASON = "&cYour version is unsupported!";
     }
 
@@ -174,30 +166,30 @@ public class Settings extends YamlConfig {
       public boolean REWRITE_IN_PING = true;
       public boolean REWRITE_IN_GAME = true;
       public String PING_BRAND = "YourServer 1.12.2-1.20.4";
-      @Comment("For ping.")
+      @Comment(@CommentValue("For ping."))
       public boolean SHOW_ALWAYS = false;
-      @Comment("{0} - Original server brand (e.g. Paper).")
+      @Comment(@CommentValue("{0} - Original server brand (e.g. Paper)."))
       public String IN_GAME_BRAND = "YourServer ({0})";
     }
 
-    @Comment("Doesn't work with srv records.")
+    @Comment(@CommentValue("Doesn't work with srv records."))
     public static class HOSTNAMES_MANAGER {
 
       public boolean BLOCK_JOIN = false;
       public boolean BLOCK_PING = false;
-      @Comment("Connections IP logging.")
+      @Comment(@CommentValue("Connections IP logging."))
       public boolean DEBUG = false;
-      @Comment("For \"debug\" option.")
+      @Comment(@CommentValue("For \"debug\" option."))
       public boolean SHOW_BLOCKED_ONLY = false;
-      @Comment("For \"block-joining\" option, set to \"\" to show the default reason.")
+      @Comment(@CommentValue("For \"block-joining\" option, set to \"\" to show the default reason."))
       public String KICK_REASON = "&cPlease, don't connect to the direct ip!{NL}Use example.com";
       public boolean WHITELIST = true;
-      @Comment("IP Addresses starting with \"127.\" or equal to \"localhost\" will be blocked.")
+      @Comment(@CommentValue("IP Addresses starting with \"127.\" or equal to \"localhost\" will be blocked."))
       public boolean BLOCK_LOCAL_ADDRESSES = false;
-      @Comment("DoMaIn.net will be similar to domain.net.")
+      @Comment(@CommentValue("DoMaIn.net will be similar to domain.net."))
       public boolean IGNORE_CASE = true;
       public List<String> HOSTNAMES = List.of("your-domain.net", "your-domain.com");
-      @Comment("List of IP addresses that will bypass this check.")
+      @Comment(@CommentValue("List of IP addresses that will bypass this check."))
       public List<String> IGNORED_IPS = List.of("79.555.*", "228.1337.*");
     }
   }

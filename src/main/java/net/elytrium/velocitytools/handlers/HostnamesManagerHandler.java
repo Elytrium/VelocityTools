@@ -28,7 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import net.elytrium.java.commons.reflection.ReflectionException;
+import net.elytrium.commons.utils.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.utils.WhitelistUtil;

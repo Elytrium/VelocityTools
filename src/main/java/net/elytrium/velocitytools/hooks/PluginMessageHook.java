@@ -33,7 +33,7 @@ import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.util.function.Supplier;
-import net.elytrium.java.commons.reflection.ReflectionException;
+import net.elytrium.commons.utils.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
 
 class PluginMessageHook extends PluginMessage implements PacketHook {

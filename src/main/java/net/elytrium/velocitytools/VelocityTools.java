@@ -25,17 +25,16 @@ import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.proxy.protocol.StateRegistry;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Objects;
+import net.elytrium.commons.kyori.serialization.Serializer;
+import net.elytrium.commons.kyori.serialization.Serializers;
+import net.elytrium.commons.utils.updates.UpdatesChecker;
 import net.elytrium.fastprepare.PreparedPacket;
 import net.elytrium.fastprepare.PreparedPacketFactory;
-import net.elytrium.java.commons.mc.serialization.Serializer;
-import net.elytrium.java.commons.mc.serialization.Serializers;
-import net.elytrium.java.commons.updates.UpdatesChecker;
 import net.elytrium.velocitytools.commands.AlertCommand;
 import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
@@ -92,7 +91,7 @@ public class VelocityTools {
       }
     }
 
-    Settings.IMP.reload(new File(this.dataDirectory.toFile().getAbsoluteFile(), "config.yml"));
+    Settings.IMP.reload(this.dataDirectory.resolve("config.yml"));
     this.packetFactory = new PreparedPacketFactory(
         PreparedPacket::new,
         StateRegistry.LOGIN,
@@ -100,7 +99,7 @@ public class VelocityTools {
         1,
         1,
         Settings.IMP.MAIN.SAVE_UNCOMPRESSED_PACKETS,
-        false
+        true
     );
 
     try {
@@ -128,7 +127,7 @@ public class VelocityTools {
 
   @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH", justification = "LEGACY_AMPERSAND can't be null in velocity.")
   public void reload() {
-    Settings.IMP.reload(new File(this.dataDirectory.toFile().getAbsoluteFile(), "config.yml"));
+    Settings.IMP.reload(this.dataDirectory.resolve("config.yml"));
 
     ComponentSerializer<Component, Component, String> serializer = Settings.IMP.SERIALIZER.getSerializer();
     if (serializer == null) {

@@ -26,7 +26,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
 import java.util.stream.Collectors;
-import net.elytrium.java.commons.reflection.ReflectionException;
+import net.elytrium.commons.utils.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
 import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.utils.ProtocolUtil;
