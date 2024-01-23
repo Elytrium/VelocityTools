@@ -24,8 +24,8 @@ import com.velocitypowered.proxy.connection.client.HandshakeSessionHandler;
 import com.velocitypowered.proxy.network.Connections;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.StateRegistry;
-import com.velocitypowered.proxy.protocol.packet.Disconnect;
-import com.velocitypowered.proxy.protocol.packet.Handshake;
+import com.velocitypowered.proxy.protocol.packet.DisconnectPacket;
+import com.velocitypowered.proxy.protocol.packet.HandshakePacket;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -38,7 +38,7 @@ import net.elytrium.velocitytools.VelocityTools;
 import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
 import net.kyori.adventure.text.Component;
 
-public class HandshakeHook extends Handshake implements PacketHook {
+public class HandshakeHook extends HandshakePacket implements PacketHook {
 
   private static Method GET_STATE_FOR_PROTOCOL;
   private static Field CONNECTION_FIELD;
@@ -82,7 +82,7 @@ public class HandshakeHook extends Handshake implements PacketHook {
 
   @Override
   public Class<? extends MinecraftPacket> getType() {
-    return Handshake.class;
+    return HandshakePacket.class;
   }
 
   @Override
@@ -110,7 +110,7 @@ public class HandshakeHook extends Handshake implements PacketHook {
 
       DISCONNECT_PACKET = factory
           .createPreparedPacket(ProtocolVersion.MINIMUM_VERSION, ProtocolVersion.MAXIMUM_VERSION)
-          .prepare(version -> Disconnect.create(kickReasonComponent, version, false));
+          .prepare(version -> DisconnectPacket.create(kickReasonComponent, version, false));
 
       DISABLE_INVALID_PROTOCOL = Settings.IMP.TOOLS.DISABLE_INVALID_PROTOCOL;
     } catch (NoSuchMethodException | NoSuchFieldException e) {

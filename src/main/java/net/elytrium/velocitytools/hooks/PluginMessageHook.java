@@ -25,7 +25,7 @@ import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
 import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.ProtocolUtils;
-import com.velocitypowered.proxy.protocol.packet.PluginMessage;
+import com.velocitypowered.proxy.protocol.packet.PluginMessagePacket;
 import com.velocitypowered.proxy.protocol.util.PluginMessageUtil;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 import net.elytrium.commons.utils.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
 
-class PluginMessageHook extends PluginMessage implements PacketHook {
+class PluginMessageHook extends PluginMessagePacket implements PacketHook {
 
   protected static MethodHandle SERVER_CONNECTION_BACKEND_PLAY_FIELD;
   protected static MethodHandle SERVER_CONNECTION_CONFIG_FIELD;
@@ -65,7 +65,7 @@ class PluginMessageHook extends PluginMessage implements PacketHook {
     return super.handle(handler);
   }
 
-  private PluginMessage rewriteMinecraftBrand(PluginMessage message, ProtocolVersion protocolVersion) {
+  private PluginMessagePacket rewriteMinecraftBrand(PluginMessagePacket message, ProtocolVersion protocolVersion) {
     String currentBrand = PluginMessageUtil.readBrandMessage(message.content());
     String rewrittenBrand = MessageFormat.format(this.inGameBrand, currentBrand);
     ByteBuf rewrittenBuf = Unpooled.buffer();
@@ -75,7 +75,7 @@ class PluginMessageHook extends PluginMessage implements PacketHook {
       rewrittenBuf.writeCharSequence(rewrittenBrand, StandardCharsets.UTF_8);
     }
 
-    return new PluginMessage(message.getChannel(), rewrittenBuf);
+    return new PluginMessagePacket(message.getChannel(), rewrittenBuf);
   }
 
   @Override
@@ -85,7 +85,7 @@ class PluginMessageHook extends PluginMessage implements PacketHook {
 
   @Override
   public Class<? extends MinecraftPacket> getType() {
-    return PluginMessage.class;
+    return PluginMessagePacket.class;
   }
 
   @Override
