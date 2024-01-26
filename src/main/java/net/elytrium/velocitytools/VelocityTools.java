@@ -18,6 +18,9 @@
 package net.elytrium.velocitytools;
 
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.Command;
+import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
@@ -138,29 +141,29 @@ public class VelocityTools {
     }
 
     List<String> aliases = Settings.IMP.COMMANDS.HUB.ALIASES;
-    aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
+    aliases.forEach(this::unregisterCommand);
     if (Settings.IMP.COMMANDS.HUB.ENABLED && !aliases.isEmpty()) {
       this.server.getCommandManager().register(aliases.get(0), new HubCommand(this.server), aliases.toArray(new String[0]));
     }
 
-    this.server.getCommandManager().unregister("alert");
-    this.server.getCommandManager().unregister("find");
-    this.server.getCommandManager().unregister("send");
-    this.server.getCommandManager().unregister("velocitytools");
+    this.unregisterCommand("alert");
+    this.unregisterCommand("find");
+    this.unregisterCommand("send");
+    this.unregisterCommand("velocitytools");
 
     if (Settings.IMP.COMMANDS.ALERT.ENABLED) {
-      this.server.getCommandManager().register("alert", new AlertCommand(this.server));
+      this.registerCommand("alert", new AlertCommand(this.server));
     }
 
     if (Settings.IMP.COMMANDS.FIND.ENABLED) {
-      this.server.getCommandManager().register("find", new FindCommand(this.server));
+      this.registerCommand("find", new FindCommand(this.server));
     }
 
     if (Settings.IMP.COMMANDS.SEND.ENABLED) {
-      this.server.getCommandManager().register("send", new SendCommand(this.server));
+      this.registerCommand("send", new SendCommand(this.server));
     }
 
-    this.server.getCommandManager().register("velocitytools", new VelocityToolsCommand(this), "vtools");
+    this.registerCommand("velocitytools", new VelocityToolsCommand(this), "vtools");
 
     this.server.getEventManager().unregisterListeners(this);
 
@@ -178,7 +181,19 @@ public class VelocityTools {
 
     HandshakeHook.reload(this.packetFactory);
   }
+  
+  private void registerCommand(String alias, Command command, String... aliases) {
+    CommandManager commandManager = this.server.getCommandManager();
+    CommandMeta meta = commandManager.metaBuilder(alias).aliases(aliases).plugin(this).build();
+    commandManager.register(meta, command);
+  }
 
+  private void unregisterCommand(String command) {
+    CommandMeta meta = this.server.getCommandManager().getCommandMeta(command);
+    if (meta != null && this.equals(meta.getPlugin())) {
+      this.server.getCommandManager().unregister(command);
+    }
+  }
 
   private static void setLogger(Logger logger) {
     LOGGER = logger;
