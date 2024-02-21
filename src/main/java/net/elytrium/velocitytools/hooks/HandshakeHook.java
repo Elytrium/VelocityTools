@@ -110,7 +110,7 @@ public class HandshakeHook extends HandshakePacket implements PacketHook {
 
       DISCONNECT_PACKET = factory
           .createPreparedPacket(ProtocolVersion.MINIMUM_VERSION, ProtocolVersion.MAXIMUM_VERSION)
-          .prepare(version -> DisconnectPacket.create(kickReasonComponent, version, false));
+          .prepare(version -> DisconnectPacket.create(kickReasonComponent, version, StateRegistry.PLAY));
 
       DISABLE_INVALID_PROTOCOL = Settings.IMP.TOOLS.DISABLE_INVALID_PROTOCOL;
     } catch (NoSuchMethodException | NoSuchFieldException e) {
