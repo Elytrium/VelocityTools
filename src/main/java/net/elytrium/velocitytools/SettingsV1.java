@@ -15,16 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.elytrium.velocitytools.hooks;
+package net.elytrium.velocitytools;
 
-import com.velocitypowered.proxy.protocol.MinecraftPacket;
-import java.util.function.Supplier;
+public class SettingsV1 { // TODO load settings in this file if version lower than 2.0.0 and after copy values to new config, rename old config file and save new
 
-public interface PacketHook {
-
-  Supplier<MinecraftPacket> getHook();
-
-  Class<? extends MinecraftPacket> getType();
-
-  Class<? extends MinecraftPacket> getHookClass();
 }

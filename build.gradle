@@ -1,3 +1,5 @@
+//file:noinspection VulnerableLibrariesLocal
+
 plugins() {
   id("java")
 
@@ -7,18 +9,27 @@ plugins() {
   id("com.github.spotbugs").version("5.0.14")
   id("org.cadixdev.licenser").version("0.6.1")
 
-  id("com.github.gmazzo.buildconfig").version("4.1.2") // Kotlin :skull:
+  id("com.github.gmazzo.buildconfig").version("4.1.2") // kotlin :skull:
 }
 
 this.group = "net.elytrium"
-this.version = "1.2.2"
+this.version = "2.0.0-SNAPSHOT"
 
-compileJava() {
-  sourceCompatibility = 17
-  targetCompatibility = 17
-  options.getRelease().set(17)
-
+tasks.withType(JavaCompile).configureEach() {
   options.setEncoding("UTF-8")
+}
+
+java() {
+  toolchain.setLanguageVersion(JavaLanguageVersion.of(17))
+}
+
+configurations() {
+  // TODO remove when checkstyle get fixed
+  checkstyle() {
+    resolutionStrategy.getCapabilitiesResolution().withCapability("com.google.collections:google-collections") {
+      select("com.google.guava:guava:0")
+    }
+  }
 }
 
 repositories() {
@@ -32,21 +43,11 @@ repositories() {
     name = "elytrium-repo"
     url = "https://maven.elytrium.net/repo/"
   }
-  maven {
-    name = "sonatype-oss-snapshots1"
-    url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-  }
 }
 
 dependencies() {
-  annotationProcessor("net.java.dev.jna:jna-platform:5.13.0")
-  annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
-
-  compileOnly("com.github.spotbugs:spotbugs-annotations:4.7.3")
-
-  compileOnly("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
-  annotationProcessor("com.velocitypowered:velocity-api:3.3.0-SNAPSHOT")
-  compileOnly("com.velocitypowered:velocity-proxy:3.3.0-SNAPSHOT") // From Elytrium Repo.
+  annotationProcessor(libs.velocity.api)
+  compileOnly(libs.bundles.velocity)
 
   // Needs for some velocity methods.
   compileOnly("io.netty:netty-transport:4.1.101.Final")
@@ -73,18 +74,22 @@ shadowJar() {
 }
 
 checkstyle() {
-  toolVersion = "10.12.1"
+  toolVersion = libs.versions.checkstyle.get()
 
-  configFile = file(".config/checkstyle/checkstyle.xml")
-  configProperties = ["configDirectory": "$rootDir/.config/checkstyle"]
+  configFile = rootProject.file(".config/checkstyle/checkstyle.xml")
   maxErrors = 0
   maxWarnings = 0
 }
 
+checkstyleMain() {
+  exclude("**/BuildConfig.java")
+}
+
 spotbugsMain() {
+  excludeFilter.set(rootProject.file(".config/spotbugs/suppressions.xml"))
   reports.register("html") {
     required = true
-    outputLocation.fileValue(file("${project.layout.buildDirectory.get()}/reports/spotbugs/main/spotbugs.html"))
+    outputLocation.value(layout.buildDirectory.file("reports/spotbugs/spotbugs.html"))
     stylesheet = "fancy-hist.xsl"
   }
 }
@@ -96,8 +101,8 @@ license() {
 }
 
 buildConfig() {
-  packageName("net.elytrium.velocitytools")
-  buildConfigField("String", "VERSION", "\"$version\"")
+  packageName("${this.group}.velocitytools")
+  buildConfigField("String", "VERSION", "\"${this.version}\"")
 }
 
 assemble.dependsOn(shadowJar)

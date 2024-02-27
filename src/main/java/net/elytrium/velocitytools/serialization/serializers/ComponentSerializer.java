@@ -15,17 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package net.elytrium.velocitytools.utils;
+package net.elytrium.velocitytools.serialization.serializers;
 
-import com.velocitypowered.api.network.ProtocolVersion;
+import net.elytrium.serializer.custom.ClassSerializer;
+import net.elytrium.velocitytools.Settings;
+import net.kyori.adventure.text.Component;
 
-public class ProtocolUtil {
+public class ComponentSerializer extends ClassSerializer<Component, String> {
 
-  public static ProtocolVersion protocolVersionFromString(String string) {
-    if (string.equalsIgnoreCase("LATEST")) {
-      return ProtocolVersion.MAXIMUM_VERSION;
-    }
+  @Override
+  public String serialize(Component from) {
+    return from == null ? "" : Settings.serializer().serialize(from);
+  }
 
-    return ProtocolVersion.valueOf("MINECRAFT_" + string.replace(".", "_"));
+  @Override
+  public Component deserialize(String from) {
+    return from.isEmpty() ? null : Settings.serializer().deserialize(from);
   }
 }

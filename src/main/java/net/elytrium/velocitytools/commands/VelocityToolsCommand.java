@@ -17,7 +17,6 @@
 
 package net.elytrium.velocitytools.commands;
 
-import com.google.common.collect.ImmutableList;
 import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import java.util.Arrays;
@@ -28,7 +27,7 @@ import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 
-public class VelocityToolsCommand implements SimpleCommand {
+public record VelocityToolsCommand(VelocityTools plugin) implements SimpleCommand {
 
   private static final List<Component> HELP_MESSAGE = List.of(
       Component.text("This server is using VelocityTools.", NamedTextColor.YELLOW),
@@ -40,15 +39,8 @@ public class VelocityToolsCommand implements SimpleCommand {
   private static final Component AVAILABLE_SUBCOMMANDS_MESSAGE = Component.text("Available subcommands:", NamedTextColor.WHITE);
   private static final Component NO_AVAILABLE_SUBCOMMANDS_MESSAGE = Component.text("There is no available subcommands for you.", NamedTextColor.WHITE);
 
-
-  public final VelocityTools plugin;
-
-  public VelocityToolsCommand(VelocityTools plugin) {
-    this.plugin = plugin;
-  }
-
   @Override
-  public List<String> suggest(SimpleCommand.Invocation invocation) {
+  public List<String> suggest(Invocation invocation) {
     CommandSource source = invocation.source();
     String[] args = invocation.arguments();
 
@@ -58,24 +50,22 @@ public class VelocityToolsCommand implements SimpleCommand {
           .map(Subcommand::getCommand)
           .collect(Collectors.toList());
     } else if (args.length == 1) {
-      String argument = args[0];
       return Arrays.stream(Subcommand.values())
           .filter(command -> command.hasPermission(source))
           .map(Subcommand::getCommand)
-          .filter(str -> str.regionMatches(true, 0, argument, 0, argument.length()))
+          .filter(str -> str.regionMatches(true, 0, args[0], 0, args[0].length()))
           .collect(Collectors.toList());
     } else {
-      return ImmutableList.of();
+      return List.of();
     }
   }
 
   @Override
-  public void execute(SimpleCommand.Invocation invocation) {
+  public void execute(Invocation invocation) {
     CommandSource source = invocation.source();
     String[] args = invocation.arguments();
 
-    int argsAmount = args.length;
-    if (argsAmount > 0) {
+    if (args.length > 0) {
       try {
         Subcommand subcommand = Subcommand.valueOf(args[0].toUpperCase(Locale.ROOT));
         if (!subcommand.hasPermission(source)) {
@@ -95,22 +85,19 @@ public class VelocityToolsCommand implements SimpleCommand {
   private void showHelp(CommandSource source) {
     HELP_MESSAGE.forEach(source::sendMessage);
 
-    List<Subcommand> availableSubcommands = Arrays.stream(Subcommand.values())
-        .filter(command -> command.hasPermission(source))
-        .collect(Collectors.toList());
-
-    if (availableSubcommands.size() > 0) {
+    List<Subcommand> availableSubcommands = Arrays.stream(Subcommand.values()).filter(command -> command.hasPermission(source)).toList();
+    if (availableSubcommands.isEmpty()) {
+      source.sendMessage(NO_AVAILABLE_SUBCOMMANDS_MESSAGE);
+    } else {
       source.sendMessage(AVAILABLE_SUBCOMMANDS_MESSAGE);
       availableSubcommands.forEach(command -> source.sendMessage(command.getMessageLine()));
-    } else {
-      source.sendMessage(NO_AVAILABLE_SUBCOMMANDS_MESSAGE);
     }
   }
 
   private enum Subcommand {
-    RELOAD("Reload config.", (VelocityToolsCommand parent, CommandSource source, String[] args) -> {
-      parent.plugin.reload();
-      source.sendMessage(Component.text("§aСonfig reloaded successfully!"));
+    RELOAD("Reload config.", (VelocityToolsCommand root, CommandSource source, String[] args) -> {
+      root.plugin.reload();
+      source.sendMessage(Component.text("Config reloaded successfully! But please note that after reload only certain messages will be reloaded", NamedTextColor.GREEN));
     });
 
     private final String command;
@@ -141,6 +128,7 @@ public class VelocityToolsCommand implements SimpleCommand {
   }
 
   private interface SubcommandExecutor {
+
     void execute(VelocityToolsCommand parent, CommandSource source, String[] args);
   }
 }

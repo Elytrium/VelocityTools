@@ -18,37 +18,39 @@
 package net.elytrium.velocitytools.hooks;
 
 import com.velocitypowered.proxy.network.Connections;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
+import net.elytrium.commons.utils.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
-import org.jetbrains.annotations.NotNull;
+import net.elytrium.velocitytools.utils.Reflection;
 
 public class ChannelInitializerHook extends ChannelInitializer<Channel> {
 
-  private final Method initChannel;
+  private static final MethodHandle INIT_CHANNEL_METHOD = Reflection.findVirtualVoid(ChannelInitializer.class, "initChannel", Channel.class);
+
   private final ChannelInitializer<Channel> originalInitializer;
 
-  @SuppressFBWarnings("EI_EXPOSE_REP2")
   public ChannelInitializerHook(ChannelInitializer<Channel> originalInitializer) {
-    try {
-      this.initChannel = ChannelInitializer.class.getDeclaredMethod("initChannel", Channel.class);
-      this.initChannel.setAccessible(true);
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-
     this.originalInitializer = originalInitializer;
   }
 
   @Override
-  protected void initChannel(@NotNull Channel channel) throws Exception {
-    this.initChannel.invoke(this.originalInitializer, channel);
-    ChannelPipeline pipeline = channel.pipeline();
-    if (Settings.IMP.TOOLS.DISABLE_LEGACY_PING && pipeline.names().contains(Connections.LEGACY_PING_DECODER)) {
-      pipeline.remove(Connections.LEGACY_PING_DECODER);
+  protected void initChannel(Channel channel) {
+    try {
+      ChannelInitializerHook.INIT_CHANNEL_METHOD.invokeExact(this.originalInitializer, channel);
+    } catch (Throwable e) {
+      throw new ReflectionException(e);
     }
+
+    ChannelPipeline pipeline = channel.pipeline();
+    if (pipeline.names().contains(Connections.LEGACY_PING_DECODER)) {
+      pipeline.remove(Connections.LEGACY_PING_DECODER); // TODO custom decoder that will instantly close the connection on legacy ping or answer
+    }
+  }
+
+  static boolean enabled() {
+    return Settings.TOOLS.disableLegacyPing;
   }
 }

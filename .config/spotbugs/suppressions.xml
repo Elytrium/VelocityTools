@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<FindBugsFilter>
+  <Match>
+    <Bug pattern="EI_EXPOSE_REP2"/>
+  </Match>
+  <!-- public enum ComponentSerializer implements net.kyori.adventure.text.serializer.ComponentSerializer<...> -->
+  <Match>
+    <Class name="net.elytrium.velocitytools.serialization.ComponentSerializer"/>
+    <Bug pattern="NM_SAME_SIMPLE_NAME_AS_INTERFACE"/>
+  </Match>
+  <!-- private final String version = ...; -->
+  <Match>
+    <Class name="net.elytrium.velocitytools.Settings"/>
+    <Bug pattern="SS_SHOULD_BE_STATIC"/>
+  </Match>
+</FindBugsFilter>

@@ -18,51 +18,45 @@
 package net.elytrium.velocitytools.commands;
 
 import com.velocitypowered.api.command.CommandSource;
-import com.velocitypowered.api.command.SimpleCommand;
+import com.velocitypowered.api.command.RawCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
-import java.text.MessageFormat;
+import java.util.Collection;
+import net.elytrium.serializer.placeholders.Placeholders;
 import net.elytrium.velocitytools.Settings;
-import net.elytrium.velocitytools.VelocityTools;
 import net.kyori.adventure.text.Component;
 
-public class AlertCommand implements SimpleCommand {
+public class AlertCommand implements RawCommand {
 
   private final ProxyServer server;
-  private final Component messageNeeded;
-  private final String prefix;
-  private final Component emptyProxy;
 
   public AlertCommand(ProxyServer server) {
     this.server = server;
-    this.messageNeeded = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.ALERT.MESSAGE_NEEDED);
-    this.prefix = Settings.IMP.COMMANDS.ALERT.PREFIX;
-    this.emptyProxy = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.ALERT.EMPTY_PROXY);
   }
 
   @Override
-  public void execute(SimpleCommand.Invocation invocation) {
+  public void execute(RawCommand.Invocation invocation) {
     CommandSource source = invocation.source();
-    String[] args = invocation.arguments();
-
-    if (args.length == 0) {
-      source.sendMessage(this.messageNeeded);
+    String args = invocation.arguments();
+    if (args.isEmpty()) {
+      source.sendMessage(Settings.ALERT_COMMAND.messageNeeded);
     } else {
-      Component component = VelocityTools.getSerializer().deserialize(MessageFormat.format(this.prefix, String.join(" ", args)));
-      if (this.server.getAllPlayers().size() < 1) {
-        source.sendMessage(this.emptyProxy);
+      Collection<Player> players = this.server.getAllPlayers();
+      if (players.isEmpty()) {
+        source.sendMessage(Settings.ALERT_COMMAND.emptyProxy);
       } else {
+        Component component = Placeholders.replace(Settings.ALERT_COMMAND.prefix, Settings.serializer().deserialize(args));
         if (!(source instanceof Player)) {
           source.sendMessage(component);
         }
 
-        this.server.getAllPlayers().forEach(player -> player.sendMessage(component));
+        players.forEach(player -> player.sendMessage(component));
       }
     }
   }
 
   @Override
-  public boolean hasPermission(SimpleCommand.Invocation invocation) {
+  public boolean hasPermission(RawCommand.Invocation invocation) {
     return invocation.source().hasPermission("velocitytools.command.alert");
   }
 }

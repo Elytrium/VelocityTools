@@ -18,37 +18,26 @@
 package net.elytrium.velocitytools;
 
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
-import com.velocitypowered.proxy.protocol.StateRegistry;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
-import net.elytrium.commons.kyori.serialization.Serializer;
-import net.elytrium.commons.kyori.serialization.Serializers;
 import net.elytrium.commons.utils.updates.UpdatesChecker;
-import net.elytrium.fastprepare.PreparedPacket;
-import net.elytrium.fastprepare.PreparedPacketFactory;
 import net.elytrium.velocitytools.commands.AlertCommand;
 import net.elytrium.velocitytools.commands.FindCommand;
 import net.elytrium.velocitytools.commands.HubCommand;
-import net.elytrium.velocitytools.commands.SendCommand;
 import net.elytrium.velocitytools.commands.VelocityToolsCommand;
-import net.elytrium.velocitytools.hooks.HandshakeHook;
-import net.elytrium.velocitytools.hooks.HooksInitializer;
-import net.elytrium.velocitytools.listeners.BrandChangerPingListener;
-import net.elytrium.velocitytools.listeners.ProtocolBlockerJoinListener;
-import net.elytrium.velocitytools.listeners.ProtocolBlockerPingListener;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.ComponentSerializer;
+import net.elytrium.velocitytools.handlers.HostnamesManagerHandler;
+import net.elytrium.velocitytools.hooks.HandshakePacketHook;
+import net.elytrium.velocitytools.hooks.Hooks;
 import org.bstats.velocity.Metrics;
-import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 import org.slf4j.Logger;
 
 @Plugin(
@@ -62,137 +51,83 @@ import org.slf4j.Logger;
 )
 public class VelocityTools {
 
-  @MonotonicNonNull
-  private static Logger LOGGER;
-  @MonotonicNonNull
-  private static Serializer SERIALIZER;
-
-  private final ProxyServer server;
+  private final Logger logger;
   private final Path dataDirectory;
+  private final ProxyServer server;
   private final Metrics.Factory metricsFactory;
-  private final PreparedPacketFactory packetFactory;
 
   @Inject
-  @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-  public VelocityTools(ProxyServer server, @DataDirectory Path dataDirectory, Logger logger, Metrics.Factory metricsFactory) {
-    setLogger(logger);
-
-    this.server = server;
+  public VelocityTools(Logger logger, @DataDirectory Path dataDirectory, ProxyServer server, Metrics.Factory metricsFactory) {
+    this.logger = logger;
     this.dataDirectory = dataDirectory;
+    this.server = server;
     this.metricsFactory = metricsFactory;
+  }
 
+  @Subscribe
+  public void onProxyInitialization(ProxyInitializeEvent event) {
     // Pre 1.2.0 migration.
     Path oldDataDirectory;
-    if (Files.notExists(dataDirectory) && Files.exists(oldDataDirectory = dataDirectory.getParent().resolve("velocity_tools"))) {
+    Path parent;
+    if (Files.notExists(this.dataDirectory) && (parent = this.dataDirectory.getParent()) != null && Files.exists(oldDataDirectory = parent.resolve("velocity_tools"))) {
       try {
-        Files.move(oldDataDirectory, dataDirectory);
+        Files.move(oldDataDirectory, this.dataDirectory);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
     }
 
-    Settings.IMP.reload(this.dataDirectory.resolve("config.yml"));
-    this.packetFactory = new PreparedPacketFactory(
-        PreparedPacket::new,
-        StateRegistry.LOGIN,
-        false,
-        1,
-        1,
-        Settings.IMP.MAIN.SAVE_UNCOMPRESSED_PACKETS,
-        true
-    );
-
-    try {
-      Class.forName("com.velocitypowered.proxy.connection.client.LoginInboundConnection");
-    } catch (ClassNotFoundException e) {
-      LOGGER.error("Please update your Velocity binary to 3.1.0+ version", e);
-      this.server.shutdown();
-    }
-  }
-
-  @Subscribe
-  public void onProxyInitialization(ProxyInitializeEvent event) {
     this.reload();
 
-    HooksInitializer.init(this.server);
+    Hooks.init(this.logger, this.server);
 
-    if (!UpdatesChecker.checkVersionByURL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION", Settings.IMP.VERSION)) {
-      LOGGER.error("****************************************");
-      LOGGER.warn("The new VelocityTools update was found, please update.");
-      LOGGER.error("https://github.com/Elytrium/VelocityTools/releases/");
-      LOGGER.error("****************************************");
+    CommandManager commandManager = this.server.getCommandManager();
+    if (Settings.HUB_COMMAND.enabled) {
+      List<String> aliases = Settings.HUB_COMMAND.aliases;
+      if (!aliases.isEmpty()) {
+        int amount = aliases.size();
+        commandManager.register(aliases.get(0), new HubCommand(this.server), amount == 1 ? new String[0] : aliases.subList(1, amount).toArray(new String[amount - 1]));
+      }
     }
-    this.metricsFactory.make(this, 12708);
+
+    if (Settings.ALERT_COMMAND.enabled) {
+      commandManager.register("alert", new AlertCommand(this.server));
+    }
+
+    if (Settings.FIND_COMMAND.enabled) {
+      commandManager.register("find", new FindCommand(this.server));
+    }
+
+    commandManager.register("velocitytools", new VelocityToolsCommand(this), "vtools");
+
+    EventManager eventManager = this.server.getEventManager();
+    if (Settings.BRAND_CHANGER.rewriteInPing
+        || Settings.PROTOCOL_BLOCKER.blockPing || Settings.PROTOCOL_BLOCKER.blockJoin
+        || (Settings.HUB_COMMAND.enabled && (Settings.HUB_COMMAND.spreadOnJoin || Settings.HUB_COMMAND.spreadOnKick))) {
+      eventManager.register(this, new VelocityToolsListener(this.logger, this.server));
+    }
+
+    try {
+      this.metricsFactory.make(this, 12708);
+      if (!UpdatesChecker.checkVersionByURL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION", Settings.HEAD.version)) {
+        this.logger.error("****************************************");
+        this.logger.warn("The new VelocityTools update was found, please update.");
+        this.logger.error("https://github.com/Elytrium/VelocityTools/releases/");
+        this.logger.error("****************************************");
+      }
+    } catch (Exception e) {
+      this.logger.error("An exception occurred during updates checking", e);
+    }
   }
 
-  @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH", justification = "LEGACY_AMPERSAND can't be null in velocity.")
   public void reload() {
-    Settings.IMP.reload(this.dataDirectory.resolve("config.yml"));
+    Settings.HEAD.reload(this.dataDirectory.resolve("config.yml"));
 
-    ComponentSerializer<Component, Component, String> serializer = Settings.IMP.SERIALIZER.getSerializer();
-    if (serializer == null) {
-      LOGGER.warn("The specified serializer could not be founded, using default. (LEGACY_AMPERSAND)");
-      setSerializer(new Serializer(Objects.requireNonNull(Serializers.LEGACY_AMPERSAND.getSerializer())));
-    } else {
-      setSerializer(new Serializer(serializer));
+    if (Settings.HOSTNAMES_MANAGER.blockJoin) {
+      HandshakePacketHook.reload();
+      HostnamesManagerHandler.reload();
+    } else if (Settings.HOSTNAMES_MANAGER.blockPing) {
+      HostnamesManagerHandler.reload();
     }
-
-    List<String> aliases = Settings.IMP.COMMANDS.HUB.ALIASES;
-    aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
-    if (Settings.IMP.COMMANDS.HUB.ENABLED && !aliases.isEmpty()) {
-      this.server.getCommandManager().register(aliases.get(0), new HubCommand(this.server), aliases.toArray(new String[0]));
-    }
-
-    this.server.getCommandManager().unregister("alert");
-    this.server.getCommandManager().unregister("find");
-    this.server.getCommandManager().unregister("send");
-    this.server.getCommandManager().unregister("velocitytools");
-
-    if (Settings.IMP.COMMANDS.ALERT.ENABLED) {
-      this.server.getCommandManager().register("alert", new AlertCommand(this.server));
-    }
-
-    if (Settings.IMP.COMMANDS.FIND.ENABLED) {
-      this.server.getCommandManager().register("find", new FindCommand(this.server));
-    }
-
-    if (Settings.IMP.COMMANDS.SEND.ENABLED) {
-      this.server.getCommandManager().register("send", new SendCommand(this.server));
-    }
-
-    this.server.getCommandManager().register("velocitytools", new VelocityToolsCommand(this), "vtools");
-
-    this.server.getEventManager().unregisterListeners(this);
-
-    if (Settings.IMP.TOOLS.BRAND_CHANGER.REWRITE_IN_PING) {
-      this.server.getEventManager().register(this, new BrandChangerPingListener());
-    }
-
-    if (Settings.IMP.TOOLS.PROTOCOL_BLOCKER.BLOCK_PING) {
-      this.server.getEventManager().register(this, new ProtocolBlockerPingListener());
-    }
-
-    if (Settings.IMP.TOOLS.PROTOCOL_BLOCKER.BLOCK_JOIN) {
-      this.server.getEventManager().register(this, new ProtocolBlockerJoinListener());
-    }
-
-    HandshakeHook.reload(this.packetFactory);
-  }
-
-
-  private static void setLogger(Logger logger) {
-    LOGGER = logger;
-  }
-
-  private static void setSerializer(Serializer serializer) {
-    SERIALIZER = serializer;
-  }
-
-  public static Logger getLogger() {
-    return LOGGER;
-  }
-
-  public static Serializer getSerializer() {
-    return SERIALIZER;
   }
 }

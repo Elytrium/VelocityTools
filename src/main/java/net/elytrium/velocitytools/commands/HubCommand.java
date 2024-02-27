@@ -21,74 +21,51 @@ import com.velocitypowered.api.command.CommandSource;
 import com.velocitypowered.api.command.SimpleCommand;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.proxy.command.builtin.CommandMessages;
-import java.util.List;
 import net.elytrium.velocitytools.Settings;
-import net.elytrium.velocitytools.VelocityTools;
+import net.elytrium.velocitytools.handlers.HubHandler;
 import net.kyori.adventure.text.Component;
 
 public class HubCommand implements SimpleCommand {
 
   private final ProxyServer server;
-  private final List<String> servers;
-  private int serversCounter;
-  private final Component disabledServer;
-  private final List<String> disabledServers;
-  private final String youGotMoved;
-  private final Component youGotMovedComponent;
 
   public HubCommand(ProxyServer server) {
     this.server = server;
-    this.servers = Settings.IMP.COMMANDS.HUB.SERVERS;
-    this.serversCounter = this.servers.size();
-    this.disabledServers = Settings.IMP.COMMANDS.HUB.DISABLED_SERVERS;
-    this.disabledServer = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.HUB.DISABLED_SERVER);
-    this.youGotMoved = Settings.IMP.COMMANDS.HUB.YOU_GOT_MOVED;
-    this.youGotMovedComponent = VelocityTools.getSerializer().deserialize(this.youGotMoved);
   }
 
   @Override
   public void execute(SimpleCommand.Invocation invocation) {
     CommandSource source = invocation.source();
-    if (!(source instanceof Player)) {
-      source.sendMessage(CommandMessages.PLAYERS_ONLY);
-      return;
-    }
-
-    Player player = (Player) source;
-
-    String serverName;
-    int serversSize = this.servers.size();
-    if (serversSize > 1) {
-      if (++this.serversCounter >= serversSize) {
-        this.serversCounter = 0;
+    if (source instanceof Player player) {
+      ServerConnection currentServer = player.getCurrentServer().orElse(null);
+      String server = currentServer == null ? null : currentServer.getServerInfo().getName();
+      if (server != null && Settings.HUB_COMMAND.disabledServers != null && Settings.HUB_COMMAND.disabledServers.contains(server) && !player.hasPermission("velocitytools.command.hub.bypass." + server)) {
+        player.sendMessage(Settings.HUB_COMMAND.disabledServer);
+        return;
       }
 
-      serverName = this.servers.get(this.serversCounter);
-    } else {
-      serverName = this.servers.get(0);
-    }
-    RegisteredServer toConnect = this.server.getServer(serverName).orElse(null);
-    if (toConnect == null) {
-      source.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.args(Component.text(serverName)));
-      return;
-    }
+      String nextServerName = HubHandler.nextServer(server);
+      RegisteredServer nextServer = this.server.getServer(nextServerName).orElse(null);
+      if (nextServer == null) {
+        player.sendMessage(CommandMessages.SERVER_DOES_NOT_EXIST.arguments(Component.text(nextServerName)));
+        return;
+      }
 
-    player.getCurrentServer().ifPresent(serverConnection -> {
-      String servername = serverConnection.getServer().getServerInfo().getName();
-
-      if (this.disabledServers.stream().anyMatch(servername::equals) && !player.hasPermission("velocitytools.command.hub.bypass." + servername)) {
-        player.sendMessage(this.disabledServer);
+      if (Settings.HUB_COMMAND.youGotMoved == null) {
+        player.createConnectionRequest(nextServer).fireAndForget();
       } else {
-        player.createConnectionRequest(toConnect).connectWithIndication()
-            .thenAccept(isSuccessful -> {
-              if (isSuccessful && !this.youGotMoved.isEmpty()) {
-                player.sendMessage(this.youGotMovedComponent);
-              }
-            });
+        player.createConnectionRequest(nextServer).connectWithIndication().thenAccept(success -> {
+          if (success) {
+            player.sendMessage(Settings.HUB_COMMAND.youGotMoved);
+          }
+        });
       }
-    });
+    } else {
+      source.sendMessage(CommandMessages.PLAYERS_ONLY);
+    }
   }
 
   @Override

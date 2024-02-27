@@ -18,120 +18,67 @@
 package net.elytrium.velocitytools.handlers;
 
 import com.velocitypowered.proxy.connection.MinecraftConnection;
-import com.velocitypowered.proxy.connection.MinecraftSessionHandler;
 import com.velocitypowered.proxy.connection.client.HandshakeSessionHandler;
 import com.velocitypowered.proxy.protocol.StateRegistry;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
 import java.net.InetSocketAddress;
 import java.util.List;
-import java.util.Locale;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import net.elytrium.commons.utils.reflection.ReflectionException;
 import net.elytrium.velocitytools.Settings;
-import net.elytrium.velocitytools.VelocityTools;
-import net.elytrium.velocitytools.utils.WhitelistUtil;
+import net.elytrium.velocitytools.utils.Reflection;
+import org.slf4j.Logger;
 
 public class HostnamesManagerHandler {
 
+  private static final MethodHandle CLEAN_V_HOST = Reflection.findStatic(HandshakeSessionHandler.class, "cleanVhost", String.class, String.class);
 
-  private static Method cleanVhost;
-  private final boolean ignoreCase;
-  private final boolean blockPing;
-  private final boolean blockJoin;
-  private final boolean blockLocal;
-  private final boolean whitelist;
-  private final List<Pattern> hostnames;
-  private final List<Pattern> whitelistedIps;
-  private final boolean debug;
-  private final boolean showBlockedOnly;
+  private static List<ThreadLocal<Matcher>> IP_WHITELIST;
 
-  public HostnamesManagerHandler() {
-    this.ignoreCase = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.IGNORE_CASE;
-    this.blockPing = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_PING;
-    this.blockJoin = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_JOIN;
-    this.blockLocal = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.BLOCK_LOCAL_ADDRESSES;
-    this.whitelist = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.WHITELIST;
-    this.hostnames = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.HOSTNAMES
-        .stream()
-        .map(object -> Pattern.compile("^" + object.replace(".", "\\.").replace("*", ".*") + "$"))
-        .collect(Collectors.toList());
-    this.whitelistedIps = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.IGNORED_IPS
-        .stream()
-        .map(object -> Pattern.compile("^" + object.replace(".", "\\.").replace("*", ".*") + "$"))
-        .collect(Collectors.toList());
-    this.debug = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.DEBUG;
-    this.showBlockedOnly = Settings.IMP.TOOLS.HOSTNAMES_MANAGER.SHOW_BLOCKED_ONLY;
-  }
-
-  public boolean checkAddress(StateRegistry type, MinecraftConnection connection, MinecraftSessionHandler handler,
-                              String initialServerAddress) throws IllegalAccessException, InvocationTargetException {
-    String log;
-
-    switch (type) {
-      case STATUS: {
-        if (this.blockPing) {
-          log = "{} is pinging the server using: {}";
-        } else {
-          return false;
-        }
-        break;
-      }
-      case LOGIN: {
-        if (this.blockJoin) {
-          log = "{} is joining the server using: {}";
-        } else {
-          return false;
-        }
-        break;
-      }
-      default: {
-        throw new IllegalStateException("Unexpected value: " + type);
-      }
+  public static boolean checkAddress(Logger logger, StateRegistry type, MinecraftConnection connection, String initialServerAddress) throws Throwable {
+    if ((type == StateRegistry.STATUS && !Settings.HOSTNAMES_MANAGER.blockPing) || (type == StateRegistry.LOGIN && !Settings.HOSTNAMES_MANAGER.blockJoin)) {
+      return false;
     }
 
     InetSocketAddress remoteAddress = (InetSocketAddress) connection.getRemoteAddress();
 
-    String originalServerAddress = (String) cleanVhost.invoke(handler, initialServerAddress);
-    String serverAddress;
-    if (this.ignoreCase) {
-      serverAddress = originalServerAddress.toLowerCase(Locale.ROOT);
-    } else {
-      serverAddress = originalServerAddress;
-    }
-
-    if ((this.blockLocal && (originalServerAddress.startsWith("127.") || originalServerAddress.equalsIgnoreCase("localhost")))
-        || (WhitelistUtil.checkForWhitelist(this.whitelist, this.hostnames.stream().anyMatch(pattern -> pattern.matcher(serverAddress).matches()))
-        && this.whitelistedIps.stream().noneMatch(pattern -> pattern.matcher(remoteAddress.getAddress().getHostAddress()).matches()))) {
-      this.debugInfo(log + " §c(blocked)", remoteAddress, originalServerAddress, true);
-      return true;
-    } else {
-      this.debugInfo(log, remoteAddress, originalServerAddress, false);
-      return false;
-    }
-  }
-
-  private void debugInfo(String msg, InetSocketAddress remoteAddress, String hostname, boolean blocked) {
-    if (this.debug) {
-      if (this.showBlockedOnly && !blocked) {
-        return;
+    String serverAddress = (String) HostnamesManagerHandler.CLEAN_V_HOST.invokeExact(initialServerAddress);
+    if (Settings.HOSTNAMES_MANAGER.blockLocalAddresses && (serverAddress.startsWith("127.") || serverAddress.equalsIgnoreCase("localhost"))
+        || (Settings.HOSTNAMES_MANAGER.whitelist != Settings.HOSTNAMES_MANAGER.hostnames.stream().anyMatch(
+            hostname -> Settings.HOSTNAMES_MANAGER.ignoreCase ? hostname.equalsIgnoreCase(serverAddress) : hostname.equals(serverAddress)
+            ) && HostnamesManagerHandler.IP_WHITELIST.stream().noneMatch(pattern -> pattern.get().reset(remoteAddress.getAddress().getHostAddress()).matches()))) {
+      if (Settings.HOSTNAMES_MANAGER.debug) {
+        // Stupid checkstyle can't handle new switch statements properly
+        // CHECKSTYLE.OFF: WhitespaceAround
+        logger.warn(switch (type) {
+          case LOGIN -> "{} is joining the server using: {} (blocked)";
+          case STATUS -> "{} is pinging the server using: {} (blocked)";
+          default -> throw new IllegalStateException("Unexpected value: " + type);
+        }, remoteAddress, serverAddress);
+        // CHECKSTYLE.ON: WhitespaceAround
       }
 
-      VelocityTools.getLogger().info(msg, remoteAddress, hostname);
+      return true;
     }
+
+    if (Settings.HOSTNAMES_MANAGER.debug && !Settings.HOSTNAMES_MANAGER.showBlockedOnly) {
+      // CHECKSTYLE.OFF: WhitespaceAround
+      logger.info(switch (type) {
+        case LOGIN -> "{} is joining the server using: {}";
+        case STATUS -> "{} is pinging the server using: {}";
+        default -> throw new IllegalStateException("Unexpected value: " + type);
+      }, remoteAddress, serverAddress);
+      // CHECKSTYLE.ON: WhitespaceAround
+    }
+
+    return false;
   }
 
-  private static void init() {
-    try {
-      cleanVhost = HandshakeSessionHandler.class.getDeclaredMethod("cleanVhost", String.class);
-      cleanVhost.setAccessible(true);
-    } catch (NoSuchMethodException e) {
-      throw new ReflectionException(e);
-    }
-  }
-
-  static {
-    init();
+  public static void reload() {
+    HostnamesManagerHandler.IP_WHITELIST = Settings.HOSTNAMES_MANAGER.ignoredIps
+        .stream()
+        .map(address -> Pattern.compile("^" + address.replace(".", "\\.").replace("*", ".*") + "$"))
+        .map(pattern -> ThreadLocal.withInitial(() -> pattern.matcher("")))
+        .toList();
   }
 }

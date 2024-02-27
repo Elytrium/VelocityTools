@@ -23,7 +23,6 @@ import com.velocitypowered.proxy.connection.backend.BackendPlaySessionHandler;
 import com.velocitypowered.proxy.connection.backend.ConfigSessionHandler;
 import com.velocitypowered.proxy.connection.backend.VelocityServerConnection;
 import com.velocitypowered.proxy.connection.client.ConnectedPlayer;
-import com.velocitypowered.proxy.protocol.MinecraftPacket;
 import com.velocitypowered.proxy.protocol.ProtocolUtils;
 import com.velocitypowered.proxy.protocol.packet.PluginMessagePacket;
 import com.velocitypowered.proxy.protocol.util.PluginMessageUtil;
@@ -31,34 +30,31 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.lang.invoke.MethodHandle;
 import java.nio.charset.StandardCharsets;
-import java.text.MessageFormat;
-import java.util.function.Supplier;
 import net.elytrium.commons.utils.reflection.ReflectionException;
+import net.elytrium.serializer.placeholders.Placeholders;
 import net.elytrium.velocitytools.Settings;
+import net.elytrium.velocitytools.utils.Reflection;
 
-class PluginMessageHook extends PluginMessagePacket implements PacketHook {
+class PluginMessagePacketHook extends PluginMessagePacket {
 
-  protected static MethodHandle SERVER_CONNECTION_BACKEND_PLAY_FIELD;
-  protected static MethodHandle SERVER_CONNECTION_CONFIG_FIELD;
-
-  private final boolean enabled = Settings.IMP.TOOLS.BRAND_CHANGER.REWRITE_IN_GAME;
-  private final String inGameBrand = Settings.IMP.TOOLS.BRAND_CHANGER.IN_GAME_BRAND;
+  private static final MethodHandle SERVER_CONN_GETTER0 = Reflection.findGetter(BackendPlaySessionHandler.class, "serverConn", VelocityServerConnection.class);
+  private static final MethodHandle SERVER_CONN_GETTER1 = Reflection.findGetter(ConfigSessionHandler.class, "serverConn", VelocityServerConnection.class);
 
   @Override
   public boolean handle(MinecraftSessionHandler handler) {
-    if (this.enabled && PluginMessageUtil.isMcBrand(this)) {
+    if (PluginMessageUtil.isMcBrand(this)) {
       try {
         if (handler instanceof BackendPlaySessionHandler) {
-          ConnectedPlayer player = ((VelocityServerConnection) SERVER_CONNECTION_BACKEND_PLAY_FIELD.invoke(handler)).getPlayer();
+          ConnectedPlayer player = ((VelocityServerConnection) PluginMessagePacketHook.SERVER_CONN_GETTER0.invokeExact((BackendPlaySessionHandler) handler)).getPlayer();
           player.getConnection().write(this.rewriteMinecraftBrand(this, player.getProtocolVersion()));
           return true;
         } else if (handler instanceof ConfigSessionHandler) {
-          ConnectedPlayer player = ((VelocityServerConnection) SERVER_CONNECTION_CONFIG_FIELD.invoke(handler)).getPlayer();
+          ConnectedPlayer player = ((VelocityServerConnection) PluginMessagePacketHook.SERVER_CONN_GETTER1.invokeExact((ConfigSessionHandler) handler)).getPlayer();
           player.getConnection().write(this.rewriteMinecraftBrand(this, player.getProtocolVersion()));
           return true;
         }
-      } catch (Throwable e) {
-        throw new ReflectionException(e);
+      } catch (Throwable t) {
+        throw new ReflectionException(t);
       }
     }
 
@@ -66,10 +62,9 @@ class PluginMessageHook extends PluginMessagePacket implements PacketHook {
   }
 
   private PluginMessagePacket rewriteMinecraftBrand(PluginMessagePacket message, ProtocolVersion protocolVersion) {
-    String currentBrand = PluginMessageUtil.readBrandMessage(message.content());
-    String rewrittenBrand = MessageFormat.format(this.inGameBrand, currentBrand);
+    String rewrittenBrand = Placeholders.replace(Settings.BRAND_CHANGER.inGameBrand, PluginMessageUtil.readBrandMessage(message.content()));
     ByteBuf rewrittenBuf = Unpooled.buffer();
-    if (protocolVersion.compareTo(ProtocolVersion.MINECRAFT_1_8) >= 0) {
+    if (protocolVersion.noLessThan(ProtocolVersion.MINECRAFT_1_8)) {
       ProtocolUtils.writeString(rewrittenBuf, rewrittenBrand);
     } else {
       rewrittenBuf.writeCharSequence(rewrittenBrand, StandardCharsets.UTF_8);
@@ -78,18 +73,7 @@ class PluginMessageHook extends PluginMessagePacket implements PacketHook {
     return new PluginMessagePacket(message.getChannel(), rewrittenBuf);
   }
 
-  @Override
-  public Supplier<MinecraftPacket> getHook() {
-    return PluginMessageHook::new;
-  }
-
-  @Override
-  public Class<? extends MinecraftPacket> getType() {
-    return PluginMessagePacket.class;
-  }
-
-  @Override
-  public Class<? extends MinecraftPacket> getHookClass() {
-    return this.getClass();
+  static boolean enabled() {
+    return Settings.BRAND_CHANGER.rewriteInGame;
   }
 }
