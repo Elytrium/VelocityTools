@@ -55,7 +55,7 @@ public class Settings extends YamlSerializable {
   }
 
   @Comment({
-      @CommentValue("Don't use \\n, use {NL} for new line. Ampersand (&) color codes are supported too.\n"),
+      @CommentValue("Don't use {NL}, use \\n for new line. Ampersand (&) color codes are supported too.\n"),
       @CommentValue(),
       @CommentValue("Permissions:"),
       @CommentValue("  │"),
@@ -156,7 +156,7 @@ public class Settings extends YamlSerializable {
       @Comment(@CommentValue("For \"block-ping\" option."))
       public String BRAND = "Version is not supported!";
       @Comment(@CommentValue("For \"block-ping\", set to \"\" to disable."))
-      public String MOTD = "&cVersion is not supported!{NL}&ePlease, join with Minecraft 1.12.2 or newer.";
+      public String MOTD = "&cVersion is not supported!\n&ePlease, join with Minecraft 1.12.2 or newer.";
       @Comment(@CommentValue("For \"block-joining\" option."))
       public String KICK_REASON = "&cYour version is unsupported!";
     }
@@ -182,7 +182,7 @@ public class Settings extends YamlSerializable {
       @Comment(@CommentValue("For \"debug\" option."))
       public boolean SHOW_BLOCKED_ONLY = false;
       @Comment(@CommentValue("For \"block-joining\" option, set to \"\" to show the default reason."))
-      public String KICK_REASON = "&cPlease, don't connect to the direct ip!{NL}Use example.com";
+      public String KICK_REASON = "&cPlease, don't connect to the direct ip!\nUse example.com";
       public boolean WHITELIST = true;
       @Comment(@CommentValue("IP Addresses starting with \"127.\" or equal to \"localhost\" will be blocked."))
       public boolean BLOCK_LOCAL_ADDRESSES = false;
