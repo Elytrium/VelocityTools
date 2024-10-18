@@ -81,6 +81,11 @@ public class Settings extends YamlSerializable {
     public SEND SEND = new SEND();
     public HUB HUB = new HUB();
 
+    public String RATELIMITED = "&cPlease wait before next usage!";
+
+    @Comment(@CommentValue("Ratelimit delay in milliseconds"))
+    public int RATELIMIT_DELAY = 1000;
+
     public static class ALERT {
 
       public boolean ENABLED = true;
