@@ -47,6 +47,9 @@ public class Settings extends YamlSerializable {
 
   public static class MAIN {
 
+    @Comment(@CommentValue("Should this plugin check for new updates?"))
+    public boolean CHECK_FOR_UPDATES = true;
+
     @Comment({
         @CommentValue("VelocityTools will consume more RAM if this option is enabled, but compatibility with other plugins will be better"),
         @CommentValue("Enable it if you have a plugin installed that bypasses compression (e.g. Geyser)")

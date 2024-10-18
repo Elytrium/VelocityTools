@@ -120,11 +120,15 @@ public class VelocityTools {
 
     HooksInitializer.init(this.server);
 
-    if (!UpdatesChecker.checkVersionByURL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION", Settings.IMP.VERSION)) {
-      LOGGER.error("****************************************");
-      LOGGER.warn("The new VelocityTools update was found, please update.");
-      LOGGER.error("https://github.com/Elytrium/VelocityTools/releases/");
-      LOGGER.error("****************************************");
+    if (Settings.IMP.MAIN.CHECK_FOR_UPDATES) {
+      this.server.getScheduler().buildTask(this, () -> {
+        if (!UpdatesChecker.checkVersionByURL("https://raw.githubusercontent.com/Elytrium/VelocityTools/master/VERSION", Settings.IMP.VERSION)) {
+          LOGGER.error("****************************************");
+          LOGGER.warn("The new VelocityTools update was found, please update.");
+          LOGGER.error("https://github.com/Elytrium/VelocityTools/releases/");
+          LOGGER.error("****************************************");
+        }
+      }).schedule();
     }
     this.metricsFactory.make(this, 12708);
   }
