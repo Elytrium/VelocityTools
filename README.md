@@ -13,7 +13,7 @@ Some useful tools for Velocity. \
 
 ## Features of VelocityTools
 
-- [Protocol](https://wiki.vg/Protocol_History) Blocker (prohibits connection from certain versions)
+- [Protocol](https://minecraft.wiki/w/Protocol_version) Blocker (prohibits connection from certain versions)
 - [Hostnames](https://en.wikipedia.org/wiki/Domain_name) Manager (denies connection from a specific hostname, see details below)
 - Brand Changer aka Brand Rewriter (changes brand in game and in ping requests)
 
