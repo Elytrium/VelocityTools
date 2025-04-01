@@ -148,8 +148,8 @@ public class VelocityTools {
     setRatelimiter(Ratelimiters.createWithMilliseconds(Settings.IMP.COMMANDS.RATELIMIT_DELAY));
 
     List<String> aliases = Settings.IMP.COMMANDS.HUB.ALIASES;
-    aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
     if (Settings.IMP.COMMANDS.HUB.ENABLED && !aliases.isEmpty()) {
+      aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
       this.server.getCommandManager().register(aliases.get(0), new HubCommand(this.server), aliases.toArray(new String[0]));
     }
 
