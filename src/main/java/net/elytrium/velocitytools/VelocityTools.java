@@ -92,7 +92,7 @@ public class VelocityTools {
       try {
         Files.move(oldDataDirectory, dataDirectory);
       } catch (IOException e) {
-        throw new RuntimeException(e);
+        logger.error("Failed to migrate data from pre-1.2.0", e);
       }
     }
 

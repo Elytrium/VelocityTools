@@ -22,33 +22,42 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
-import java.lang.reflect.Method;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import net.elytrium.velocitytools.Settings;
 import org.jetbrains.annotations.NotNull;
 
 public class ChannelInitializerHook extends ChannelInitializer<Channel> {
 
-  private final Method initChannel;
+  private static final MethodHandle MH_initChannel;
+
   private final ChannelInitializer<Channel> originalInitializer;
 
   @SuppressFBWarnings("EI_EXPOSE_REP2")
   public ChannelInitializerHook(ChannelInitializer<Channel> originalInitializer) {
-    try {
-      this.initChannel = ChannelInitializer.class.getDeclaredMethod("initChannel", Channel.class);
-      this.initChannel.setAccessible(true);
-    } catch (NoSuchMethodException e) {
-      throw new RuntimeException(e);
-    }
-
     this.originalInitializer = originalInitializer;
   }
 
   @Override
   protected void initChannel(@NotNull Channel channel) throws Exception {
-    this.initChannel.invoke(this.originalInitializer, channel);
+    try {
+      MH_initChannel.invokeExact(this.originalInitializer, channel);
+    } catch (Throwable e) {
+      throw new Exception("failed to initialize channel", e);
+    }
     ChannelPipeline pipeline = channel.pipeline();
     if (Settings.IMP.TOOLS.DISABLE_LEGACY_PING && pipeline.names().contains(Connections.LEGACY_PING_DECODER)) {
       pipeline.remove(Connections.LEGACY_PING_DECODER);
+    }
+  }
+
+  static {
+    try {
+      MH_initChannel = MethodHandles.privateLookupIn(ChannelInitializer.class, MethodHandles.lookup())
+          .findVirtual(ChannelInitializer.class, "initChannel", MethodType.methodType(void.class, Channel.class));
+    } catch (Throwable e) {
+      throw new ExceptionInInitializerError(e);
     }
   }
 }

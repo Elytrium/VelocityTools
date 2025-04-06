@@ -1,10 +1,10 @@
 plugins() {
   id("java")
 
-  id("com.github.johnrengelman.shadow").version("8.1.1")
+  id("com.gradleup.shadow").version("8.3.6")
 
   id("checkstyle")
-  id("com.github.spotbugs").version("5.0.14")
+  id("com.github.spotbugs").version("6.1.7")
   id("org.cadixdev.licenser").version("0.6.1")
 
   id("com.github.gmazzo.buildconfig").version("4.1.2") // Kotlin :skull:
@@ -32,17 +32,12 @@ repositories() {
     name = "elytrium-repo"
     url = "https://maven.elytrium.net/repo/"
   }
-  maven {
-    name = "sonatype-oss-snapshots1"
-    url = "https://s01.oss.sonatype.org/content/repositories/snapshots/"
-  }
 }
 
 dependencies() {
   annotationProcessor("net.java.dev.jna:jna-platform:5.13.0")
-  annotationProcessor("com.github.bsideup.jabel:jabel-javac-plugin:1.0.0")
 
-  compileOnly("com.github.spotbugs:spotbugs-annotations:4.7.3")
+  compileOnly("com.github.spotbugs:spotbugs-annotations:4.9.3")
 
   compileOnly("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
   annotationProcessor("com.velocitypowered:velocity-api:3.4.0-SNAPSHOT")
