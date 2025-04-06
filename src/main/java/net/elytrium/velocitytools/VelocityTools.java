@@ -28,6 +28,7 @@ import com.velocitypowered.proxy.util.ratelimit.Ratelimiter;
 import com.velocitypowered.proxy.util.ratelimit.Ratelimiters;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -69,7 +70,7 @@ public class VelocityTools {
   @MonotonicNonNull
   private static Serializer SERIALIZER;
   @MonotonicNonNull
-  private static Ratelimiter RATELIMITER;
+  private static Ratelimiter<InetAddress> RATELIMITER;
 
   private final ProxyServer server;
   private final Path dataDirectory;
@@ -198,7 +199,7 @@ public class VelocityTools {
     SERIALIZER = serializer;
   }
 
-  private static void setRatelimiter(Ratelimiter ratelimiter) {
+  private static void setRatelimiter(Ratelimiter<InetAddress> ratelimiter) {
     RATELIMITER = ratelimiter;
   }
 
@@ -210,7 +211,7 @@ public class VelocityTools {
     return SERIALIZER;
   }
 
-  public static Ratelimiter getRatelimiter() {
+  public static Ratelimiter<InetAddress> getRatelimiter() {
     return RATELIMITER;
   }
 }
