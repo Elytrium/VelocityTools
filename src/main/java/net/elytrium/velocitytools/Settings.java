@@ -107,7 +107,8 @@ public class Settings extends YamlSerializable {
 
     public static class SEND {
 
-      public boolean ENABLED = true;
+      @Comment(@CommentValue("Velocity already has /send command, so this one is disabled by default to not replace it."))
+      public boolean ENABLED = false;
       public String CONSOLE = "CONSOLE";
       public String NOT_ENOUGH_ARGUMENTS = "&fNot enough arguments. Usage: &6/send <server|player|all|current> <target>";
       @Comment(@CommentValue("Set to \"\" to disable."))
