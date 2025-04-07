@@ -18,11 +18,15 @@
 package net.elytrium.velocitytools;
 
 import com.google.inject.Inject;
+import com.velocitypowered.api.command.Command;
+import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.PluginContainer;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.proxy.plugin.virtual.VelocityVirtualPlugin;
 import com.velocitypowered.proxy.protocol.StateRegistry;
 import com.velocitypowered.proxy.util.ratelimit.Ratelimiter;
 import com.velocitypowered.proxy.util.ratelimit.Ratelimiters;
@@ -31,8 +35,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import net.elytrium.commons.kyori.serialization.Serializer;
 import net.elytrium.commons.kyori.serialization.Serializers;
 import net.elytrium.commons.utils.updates.UpdatesChecker;
@@ -136,6 +142,9 @@ public class VelocityTools {
 
   @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH", justification = "LEGACY_AMPERSAND can't be null in velocity.")
   public void reload() {
+    // Unregister previously registered commands.
+    this.unregisterCommands();
+
     Settings.IMP.reload(this.dataDirectory.resolve("config.yml"));
 
     ComponentSerializer<Component, Component, String> serializer = Settings.IMP.SERIALIZER.getSerializer();
@@ -147,31 +156,26 @@ public class VelocityTools {
     }
 
     setRatelimiter(Ratelimiters.createWithMilliseconds(Settings.IMP.COMMANDS.RATELIMIT_DELAY));
+    this.unregisterCommands();
 
     List<String> aliases = Settings.IMP.COMMANDS.HUB.ALIASES;
-    aliases.forEach(alias -> this.server.getCommandManager().unregister(alias));
     if (Settings.IMP.COMMANDS.HUB.ENABLED && !aliases.isEmpty()) {
-      this.server.getCommandManager().register(aliases.get(0), new HubCommand(this.server), aliases.toArray(new String[0]));
+      this.registerCommand(aliases.get(0), new HubCommand(this.server), aliases.toArray(new String[0]));
     }
 
-    this.server.getCommandManager().unregister("alert");
-    this.server.getCommandManager().unregister("find");
-    this.server.getCommandManager().unregister("send");
-    this.server.getCommandManager().unregister("velocitytools");
-
     if (Settings.IMP.COMMANDS.ALERT.ENABLED) {
-      this.server.getCommandManager().register("alert", new AlertCommand(this.server));
+      this.registerCommand("alert", new AlertCommand(this.server));
     }
 
     if (Settings.IMP.COMMANDS.FIND.ENABLED) {
-      this.server.getCommandManager().register("find", new FindCommand(this.server));
+      this.registerCommand("find", new FindCommand(this.server));
     }
 
     if (Settings.IMP.COMMANDS.SEND.ENABLED) {
-      this.server.getCommandManager().register("send", new SendCommand(this.server));
+      this.registerCommand("send", new SendCommand(this.server));
     }
 
-    this.server.getCommandManager().register("velocitytools", new VelocityToolsCommand(this), "vtools");
+    this.registerCommand("velocitytools", new VelocityToolsCommand(this), "vtools");
 
     this.server.getEventManager().unregisterListeners(this);
 
@@ -190,6 +194,60 @@ public class VelocityTools {
     HandshakeHook.reload(this.packetFactory);
   }
 
+  private void registerCommand(String alias, Command command, String... otherAliases) {
+    List<CommandMeta> unregisteredCommands = new ArrayList<>();
+
+    CommandMeta meta = this.server.getCommandManager().getCommandMeta(alias);
+    if (meta != null) {
+      unregisteredCommands.add(meta);
+      this.server.getCommandManager().unregister(alias);
+    }
+
+    for (String otherAlias : otherAliases) {
+      meta = this.server.getCommandManager().getCommandMeta(otherAlias);
+      if (meta != null) {
+        unregisteredCommands.add(meta);
+        this.server.getCommandManager().unregister(otherAlias);
+      }
+    }
+
+    if (!unregisteredCommands.isEmpty()) {
+      getLogger().warn("Unregistered command(s) from other plugin(s): {}", unregisteredCommands.stream().map(commandMeta -> {
+        String pluginName = "unknown";
+        Object plugin = commandMeta.getPlugin();
+        if (plugin instanceof VelocityVirtualPlugin) {
+          pluginName = "Velocity";
+        } else if (plugin != null) {
+          PluginContainer container = this.server.getPluginManager().fromInstance(plugin).orElse(null);
+          if (container != null && container.getDescription() != null) {
+            pluginName = container.getDescription().getName().orElse(plugin.toString());
+          }
+        }
+
+        return String.join(", ", commandMeta.getAliases()) + " from " + pluginName;
+      }).collect(Collectors.joining(", ")));
+    }
+
+    this.server.getCommandManager().register(this.server.getCommandManager().metaBuilder(alias).plugin(this).aliases(otherAliases).build(), command);
+  }
+
+  private void unregisterCommands() {
+    List<String> aliases = Settings.IMP.COMMANDS.HUB.ALIASES;
+    if (aliases != null) {
+      aliases.forEach(this::unregisterCommand);
+    }
+    this.unregisterCommand("alert");
+    this.unregisterCommand("find");
+    this.unregisterCommand("send");
+    this.unregisterCommand("velocitytools");
+  }
+  
+  private void unregisterCommand(String command) {
+    CommandMeta meta = this.server.getCommandManager().getCommandMeta(command);
+    if (meta != null && meta.getPlugin() == this) {
+      this.server.getCommandManager().unregister(meta);
+    }
+  }
 
   private static void setLogger(Logger logger) {
     LOGGER = logger;
