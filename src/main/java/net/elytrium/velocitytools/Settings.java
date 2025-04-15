@@ -149,7 +149,7 @@ public class Settings extends YamlSerializable {
       public boolean WHITELIST = false;
       @Comment({
           @CommentValue("You can set either a protocol number here (e.g. '340' for 1.12.2) or a Minecraft version below (e.g. '1.12.2')"),
-          @CommentValue("You can find a list of protocols here: https://wiki.vg/Protocol_version_numbers"),
+          @CommentValue("You can find a list of protocols here: https://minecraft.wiki/w/Protocol_version"),
       })
       public List<Integer> PROTOCOLS = List.of(9999, 9998);
       @Comment({
