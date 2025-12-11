@@ -33,7 +33,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -68,36 +68,9 @@ public class HooksInitializer {
       MethodHandle versionsField = MethodHandles.privateLookupIn(StateRegistry.PacketRegistry.class, MethodHandles.lookup())
           .findGetter(StateRegistry.PacketRegistry.class, "versions", Map.class);
 
-      MethodHandle packetIdToSupplierField = MethodHandles
-          .privateLookupIn(StateRegistry.PacketRegistry.ProtocolRegistry.class, MethodHandles.lookup())
-          .findGetter(StateRegistry.PacketRegistry.ProtocolRegistry.class, "packetIdToSupplier", IntObjectMap.class);
-
-      MethodHandle packetClassToIdField = MethodHandles
-          .privateLookupIn(StateRegistry.PacketRegistry.ProtocolRegistry.class, MethodHandles.lookup())
-          .findGetter(StateRegistry.PacketRegistry.ProtocolRegistry.class, "packetClassToId", Object2IntMap.class);
-
-      List<PacketHook> hooks = new ArrayList<>();
-      hooks.add(new PluginMessageHook());
-      hooks.add(new HandshakeHook());
-
-      BiConsumer<? super ProtocolVersion, ? super StateRegistry.PacketRegistry.ProtocolRegistry> consumer = (version, registry) -> {
-        try {
-          IntObjectMap<Supplier<? extends MinecraftPacket>> packetIdToSupplier
-              = (IntObjectMap<Supplier<? extends MinecraftPacket>>) packetIdToSupplierField.invoke(registry);
-
-          Object2IntMap<Class<? extends MinecraftPacket>> packetClassToId
-              = (Object2IntMap<Class<? extends MinecraftPacket>>) packetClassToIdField.invoke(registry);
-
-          hooks.forEach(hook -> {
-            int packetId = packetClassToId.getInt(hook.getType());
-            packetClassToId.put(hook.getHookClass(), packetId);
-            packetIdToSupplier.remove(packetId);
-            packetIdToSupplier.put(packetId, hook.getHook());
-          });
-        } catch (Throwable e) {
-          throw new ReflectionException(e);
-        }
-      };
+      Map<StateRegistry, List<PacketHook>> hooks = new LinkedHashMap<>();
+      hooks.put(StateRegistry.PLAY, List.of(new PluginMessageHook()));
+      hooks.put(StateRegistry.HANDSHAKE, List.of(new HandshakeHook()));
 
       MethodHandle clientboundGetter = MethodHandles.privateLookupIn(StateRegistry.class, MethodHandles.lookup())
           .findGetter(StateRegistry.class, "clientbound", StateRegistry.PacketRegistry.class);
@@ -109,11 +82,44 @@ public class HooksInitializer {
       StateRegistry.PacketRegistry configClientbound = (StateRegistry.PacketRegistry) clientboundGetter.invokeExact(StateRegistry.CONFIG);
       StateRegistry.PacketRegistry handshakeServerbound = (StateRegistry.PacketRegistry) serverboundGetter.invokeExact(StateRegistry.HANDSHAKE);
 
-      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(playClientbound)).forEach(consumer);
-      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(configClientbound)).forEach(consumer);
-      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(handshakeServerbound)).forEach(consumer);
+      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(playClientbound))
+          .forEach(hookInitializer(hooks.getOrDefault(StateRegistry.PLAY, List.of())));
+      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(configClientbound))
+          .forEach(hookInitializer(hooks.getOrDefault(StateRegistry.CONFIG, List.of())));
+      ((Map<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry>) versionsField.invokeExact(handshakeServerbound))
+          .forEach(hookInitializer(hooks.getOrDefault(StateRegistry.HANDSHAKE, List.of())));
     } catch (Throwable e) {
       throw new ReflectionException(e);
     }
+  }
+
+  private static BiConsumer<ProtocolVersion, StateRegistry.PacketRegistry.ProtocolRegistry> hookInitializer(List<PacketHook> hooks)
+      throws IllegalAccessException, NoSuchFieldException {
+    MethodHandle packetIdToSupplierField = MethodHandles
+        .privateLookupIn(StateRegistry.PacketRegistry.ProtocolRegistry.class, MethodHandles.lookup())
+        .findGetter(StateRegistry.PacketRegistry.ProtocolRegistry.class, "packetIdToSupplier", IntObjectMap.class);
+
+    MethodHandle packetClassToIdField = MethodHandles
+        .privateLookupIn(StateRegistry.PacketRegistry.ProtocolRegistry.class, MethodHandles.lookup())
+        .findGetter(StateRegistry.PacketRegistry.ProtocolRegistry.class, "packetClassToId", Object2IntMap.class);
+
+    return (version, registry) -> {
+      try {
+        IntObjectMap<Supplier<? extends MinecraftPacket>> packetIdToSupplier
+            = (IntObjectMap<Supplier<? extends MinecraftPacket>>) packetIdToSupplierField.invoke(registry);
+
+        Object2IntMap<Class<? extends MinecraftPacket>> packetClassToId
+            = (Object2IntMap<Class<? extends MinecraftPacket>>) packetClassToIdField.invoke(registry);
+
+        hooks.forEach(hook -> {
+          int packetId = packetClassToId.getInt(hook.getType());
+          packetClassToId.put(hook.getHookClass(), packetId);
+          packetIdToSupplier.remove(packetId);
+          packetIdToSupplier.put(packetId, hook.getHook());
+        });
+      } catch (Throwable e) {
+        throw new ReflectionException(e);
+      }
+    };
   }
 }
