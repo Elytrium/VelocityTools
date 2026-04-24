@@ -36,11 +36,13 @@ public class FindCommand implements SimpleCommand {
   private final ProxyServer server;
   private final Component usernameNeeded;
   private final String playerOnlineAt;
+  private final List<String> blacklist;
 
   public FindCommand(ProxyServer server) {
     this.server = server;
     this.usernameNeeded = VelocityTools.getSerializer().deserialize(Settings.IMP.COMMANDS.FIND.USERNAME_NEEDED);
     this.playerOnlineAt = Settings.IMP.COMMANDS.FIND.PLAYER_ONLINE_AT;
+    this.blacklist = Settings.IMP.COMMANDS.FIND.FIND_BLACKLIST;
   }
 
   @Override
@@ -50,11 +52,13 @@ public class FindCommand implements SimpleCommand {
     if (args.length == 0) {
       return this.server.getAllPlayers().stream()
           .map(Player::getUsername)
+          .filter(name -> !blacklist.contains(name))
           .collect(Collectors.toList());
     } else if (args.length == 1) {
       return this.server.getAllPlayers().stream()
           .map(Player::getUsername)
           .filter(name -> name.regionMatches(true, 0, args[0], 0, args[0].length()))
+          .filter(name -> !blacklist.contains(name))
           .collect(Collectors.toList());
     } else {
       return ImmutableList.of();
@@ -70,7 +74,7 @@ public class FindCommand implements SimpleCommand {
       source.sendMessage(this.usernameNeeded);
     } else {
       Optional<Player> player = this.server.getPlayer(args[0]);
-      if (player.isPresent()) {
+      if (player.isPresent() && !blacklist.contains(player.get().getUsername())) {
         Player player0 = player.get();
         Optional<ServerConnection> server = player0.getCurrentServer();
         server.ifPresent(srv ->

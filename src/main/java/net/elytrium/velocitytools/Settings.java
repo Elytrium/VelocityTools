@@ -103,6 +103,9 @@ public class Settings extends YamlSerializable {
       public String USERNAME_NEEDED = "&cYou must supply the username.";
       public String PLAYER_ONLINE_AT = "&6{0} &fis online at &6{1}";
       public String PLAYER_NOT_ONLINE = "&6{0} &fis not online.";
+
+      @Comment(@CommentValue("List of players that cannot be found using /find command"))
+      public List<String> FIND_BLACKLIST = List.of("player1", "player2");
     }
 
     public static class SEND {
